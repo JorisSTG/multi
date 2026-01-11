@@ -29,6 +29,9 @@ heures_par_mois = [744, 672, 744, 720, 744, 720, 744, 744, 720, 744, 720, 744]
 percentiles_list = [10, 25, 50, 75, 90]
 couleurs = ["goldenrod", "lightgray", "navy", "green", "darkmagenta", "peru", "silver", "orange"]
 
+vmaxH = 100
+vminH = -100
+
 # -------- Noms des mois --------
 mois_noms = {
     1: "Janvier", 2: "Février", 3: "Mars",
@@ -154,7 +157,7 @@ if len(uploaded_files) >= 2:
     bin_edges = np.arange(-10, 46, 1)
     bin_labels = bin_edges[:-1].astype(int)
     n_files = len(uploaded_files)
-    bar_width = 1.0 / n_files  # Largeur de chaque barre en fonction du nombre de fichiers
+    bar_width = 1.0 / n_files
 
     for mois_num in range(1, 13):
         mois = mois_noms[mois_num]
@@ -189,6 +192,139 @@ if len(uploaded_files) >= 2:
     ax.legend()
     st.pyplot(fig)
     plt.close(fig)
+
+    # -------- Seuils --------
+    st.subheader("Seuils de température")
+    t_sup_thresholds = st.text_input("Seuils supérieurs (°C, séparer les seuils par des / )", "25/30")
+    t_inf_thresholds = st.text_input("Seuils inférieurs (°C, séparer les seuils par des / )", "0/5")
+
+    t_sup_thresholds_list = [int(float(x.strip())) for x in t_sup_thresholds.split("/")]
+    t_inf_thresholds_list = [int(float(x.strip())) for x in t_inf_thresholds.split("/")]
+
+    stats_sup = []
+    stats_inf = []
+
+    # -------- Calculs mensuels --------
+    for mois_num in range(1, 13):
+        mois = mois_noms[mois_num]
+        idx0 = sum(heures_par_mois[:mois_num-1])
+        idx1 = sum(heures_par_mois[:mois_num])
+
+        ref_mois = df_ref[df_ref["month_num"] == mois_num]["T2m"].values
+
+        for key in data:
+            mod_mois = data[key][idx0:idx1]
+
+            # Seuils supérieurs
+            for seuil in t_sup_thresholds_list:
+                heures_ref = np.sum(ref_mois > seuil)
+                heures_mod = np.sum(mod_mois > seuil)
+                ecart = heures_mod - heures_ref
+
+                stats_sup.append({
+                    "Mois": mois,
+                    "Source": file_names[key],
+                    "Seuil (°C)": seuil,
+                    "Heures": heures_mod,
+                    "Heures Référence": heures_ref,
+                    "Ecart (Source - Référence)": ecart
+                })
+
+            # Seuils inférieurs
+            for seuil in t_inf_thresholds_list:
+                heures_ref = np.sum(ref_mois < seuil)
+                heures_mod = np.sum(mod_mois < seuil)
+                ecart = heures_mod - heures_ref
+
+                stats_inf.append({
+                    "Mois": mois,
+                    "Source": file_names[key],
+                    "Seuil (°C)": seuil,
+                    "Heures": heures_mod,
+                    "Heures Référence": heures_ref,
+                    "Ecart (Source - Référence)": ecart
+                })
+
+    # -------- DataFrames --------
+    df_sup = pd.DataFrame(stats_sup)
+    df_inf = pd.DataFrame(stats_inf)
+
+    for df in [df_sup, df_inf]:
+        df["Heures"] = df["Heures"].astype(int)
+        df["Heures Référence"] = df["Heures Référence"].astype(int)
+        df["Ecart (Source - Référence)"] = df["Ecart (Source - Référence)"].astype(int)
+
+    # -------- Affichage mensuel --------
+    st.subheader("Nombre d'heures supérieur au(x) seuil(s)")
+    df_sup_styled = (
+        df_sup.style
+        .background_gradient(subset=["Ecart (Source - Référence)"], cmap="bwr", vmin=vminH, vmax=vmaxH, axis=None)
+    )
+    st.dataframe(df_sup_styled, hide_index=True)
+
+    st.subheader("Nombre d'heures inférieur au(x) seuil(s)")
+    df_inf_styled = (
+        df_inf.style
+        .background_gradient(subset=["Ecart (Source - Référence)"], cmap="bwr_r", vmin=vminH, vmax=vmaxH, axis=None)
+    )
+    st.dataframe(df_inf_styled, hide_index=True)
+
+    # -------- Sommes annuelles --------
+    obs_all = df_ref["T2m"].values
+    annual_sup = []
+    annual_inf = []
+
+    # Seuils supérieurs annuels
+    for key in data:
+        mod_all = data[key]
+        for seuil in t_sup_thresholds_list:
+            heures_ref = np.sum(obs_all > seuil)
+            heures_mod = np.sum(mod_all > seuil)
+            ecart = heures_mod - heures_ref
+
+            annual_sup.append({
+                "Période": "Année",
+                "Source": file_names[key],
+                "Seuil (°C)": seuil,
+                "Heures": int(heures_mod),
+                "Heures Référence": int(heures_ref),
+                "Ecart (Source - Référence)": int(ecart)
+            })
+
+    # Seuils inférieurs annuels
+    for key in data:
+        mod_all = data[key]
+        for seuil in t_inf_thresholds_list:
+            heures_ref = np.sum(obs_all < seuil)
+            heures_mod = np.sum(mod_all < seuil)
+            ecart = heures_mod - heures_ref
+
+            annual_inf.append({
+                "Période": "Année",
+                "Source": file_names[key],
+                "Seuil (°C)": seuil,
+                "Heures": int(heures_mod),
+                "Heures Référence": int(heures_ref),
+                "Ecart (Source - Référence)": int(ecart)
+            })
+
+    df_sup_year = pd.DataFrame(annual_sup)
+    df_inf_year = pd.DataFrame(annual_inf)
+
+    # -------- Affichage annuel --------
+    st.subheader("Somme annuelle — Nombre d'heures supérieur au(x) seuil(s)")
+    df_sup_year_styled = (
+        df_sup_year.style
+        .background_gradient(subset=["Ecart (Source - Référence)"], cmap="bwr", vmin=vminH*12, vmax=vmaxH*12, axis=None)
+    )
+    st.dataframe(df_sup_year_styled, hide_index=True)
+
+    st.subheader("Somme annuelle — Nombre d'heures inférieur au(x) seuil(s)")
+    df_inf_year_styled = (
+        df_inf_year.style
+        .background_gradient(subset=["Ecart (Source - Référence)"], cmap="bwr_r", vmin=vminH*12, vmax=vmaxH*12, axis=None)
+    )
+    st.dataframe(df_inf_year_styled, hide_index=True)
 
     # -------- Courbes CDF mensuelles --------
     st.subheader("Courbes CDF mensuelles")
