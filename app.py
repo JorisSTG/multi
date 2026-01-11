@@ -275,14 +275,16 @@ if len(uploaded_files) >= 2:
     
     for m in range(12):
         fig, ax = plt.subplots(figsize=(7,4))
+        i0 = sum(heures_par_mois[:m])
+        i1 = sum(heures_par_mois[:m+1])
         for i, k in enumerate(data):
             # Toutes les valeurs du mois m
-            X = np.sort(np.concatenate(Tm_jour_all[k][m]))  # concaténer si Tm_jour_all[k][m] contient plusieurs sous-listes/heures
+            X = np.sort(data[k][i0:i1])
             if len(X) == 0:
                 continue
             F = np.arange(1, len(X)+1) / len(X)
             ax.plot(X, F, color=couleurs[i], label=file_names[k])
-        ax.set_title(f"CDF Tm – {mois_noms[m+1]}")
+        ax.set_title(f"CDF – {mois_noms[m+1]}")
         ax.set_xlabel("Température (°C)")
         ax.set_ylabel("Probabilité cumulée")
         ax.grid(alpha=0.3)
@@ -294,18 +296,19 @@ if len(uploaded_files) >= 2:
     fig, ax = plt.subplots(figsize=(8,5))
     for i, k in enumerate(data):
         # Toutes les valeurs de l'année
-        X = np.sort(np.concatenate([np.concatenate(Tm_jour_all[k][m]) for m in range(12)]))
+        X = np.sort(data[k])
         if len(X) == 0:
             continue
         F = np.arange(1, len(X)+1) / len(X)
         ax.plot(X, F, color=couleurs[i], label=file_names[k])
-    ax.set_title("CDF annuelle Tm")
+    ax.set_title("CDF annuelle")
     ax.set_xlabel("Température (°C)")
     ax.set_ylabel("Probabilité cumulée")
     ax.grid(alpha=0.3)
     ax.legend()
     st.pyplot(fig)
     plt.close(fig)
+
     
     # Pour les graphiques en barres (vagues, jours chauds/nuits, DJC/DJF)
     n_files = len(data)
