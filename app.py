@@ -97,7 +97,7 @@ if len(uploaded_files) >= 2:
             Tm_jour_all[k].append(tm)
             Tx_jour_all[k].append(tx)
 
-    # -------- Nouvelle fonction : indice de recouvrement --------
+    # -------- Fonction de précision --------
     def precision_overlap(a, b, bin_width=1.0):
         """
         Calcule l'indice de recouvrement (%) entre deux séries de données.
@@ -106,55 +106,49 @@ if len(uploaded_files) >= 2:
         if len(a) == 0 or len(b) == 0:
             return np.nan
     
-        # Définir les bornes de l'histogramme
         min_val = min(np.min(a), np.min(b))
         max_val = max(np.max(a), np.max(b))
         bins = np.arange(min_val, max_val + bin_width, bin_width)
     
-        # Calcul des histogrammes normalisés
         hist_a, _ = np.histogram(a, bins=bins, density=True)
         hist_b, _ = np.histogram(b, bins=bins, density=True)
     
-        # Indice de recouvrement
         overlap = np.sum(np.minimum(hist_a, hist_b) * bin_width)
-        indice_percent = overlap * 100
-        return round(indice_percent, 2)
+        return round(overlap * 100, 2)
     
+    # -------- Calcul précision mensuelle --------
+    df_precision_list = []
     
-    # -------- Calcul de précision mensuelle (sans source 1) --------
-    st.subheader("Précision mensuelle par recouvrement (%) par rapport à la source 1")
-    
-    results_precision = {}
-    ref_key = "source_1"  # Référence pour comparaison
-    
-    for k in data:
-        if k == ref_key:
-            continue  # on ne calcule pas pour la source 1
-        results_precision[k] = []
+    ref_key = "source_1"
     
     for mois_num in range(12):
-        ref = Tm_jour_all[ref_key][mois_num]  # Tm journalière de la source 1
+        mois = mois_noms[mois_num+1]
+        ref = Tm_jour_all[ref_key][mois_num]  # Tm journalière source 1
+    
         for k in data:
             if k == ref_key:
                 continue
             comp = Tm_jour_all[k][mois_num]
-            precision = precision_overlap(ref, comp)
-            results_precision[k].append(precision)
+            pct = precision_overlap(ref, comp)
+            df_precision_list.append({
+                "Mois": mois,
+                "Source": file_names[k],
+                "Précision (%)": pct
+            })
     
-    # -------- DataFrame final avec style ----------
-    df_precision = pd.DataFrame(results_precision)
-    df_precision["Mois"] = list(mois_noms.values())
+    df_precision = pd.DataFrame(df_precision_list)
     
-    # Dégradé couleur comme ton exemple
-    vminP = 50
-    vmaxP = 100
+    # -------- Style avec couleurs --------
+    vminP = 50  # min pour gradient
+    vmaxP = 100 # max pour gradient
     df_precision_styled = (
-        df_precision.style
-        .background_gradient(subset=df_precision.columns[:-1], cmap="RdYlGn", vmin=vminP, vmax=vmaxP, axis=None)
-        .format({col: "{:.2f}" for col in df_precision.columns[:-1]})
+        df_precision.pivot(index="Mois", columns="Source", values="Précision (%)")
+        .style.background_gradient(cmap="RdYlGn", vmin=vminP, vmax=vmaxP, axis=None)
     )
     
-    st.dataframe(df_precision_styled.set_index("Mois"), use_container_width=True)
+    st.subheader("Précision mensuelle par recouvrement (%) par rapport à la source 1")
+    st.dataframe(df_precision_styled, use_container_width=True)
+
 
     # -------- Seuils supérieurs et inférieurs --------
     t_sup_thresholds = st.text_input("Seuils Tmax supérieur (°C, séparés par des / )", "25/30")
