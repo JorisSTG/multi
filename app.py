@@ -49,7 +49,10 @@ if len(uploaded_files) >= 2:
 
     # -------- Lecture des fichiers CSV --------
     data = {}
+    file_names = {}
     for i, file in enumerate(uploaded_files):
+        file_name = file.name.replace(".csv", "")
+        file_names[f"source_{i+1}"] = file_name
         data[f"source_{i+1}"] = pd.read_csv(file, header=0).iloc[:, 0].values
 
     # -------- Création de df_ref (référence) --------
@@ -116,11 +119,11 @@ if len(uploaded_files) >= 2:
     df_results = pd.DataFrame()
     for key in results_all:
         df_source = pd.DataFrame(results_all[key])
-        df_source["Source"] = key
+        df_source["Source"] = file_names[key]
         df_results = pd.concat([df_results, df_source], ignore_index=True)
 
     # -------- Affichage du tableau des RMSE/Précision --------
-    st.subheader("Précision par mois pour toutes les sources (par rapport à la source 1)")
+    st.subheader("Précision par mois pour toutes les sources (par rapport à la référence)")
     df_results_styled = (
         df_results.style
         .background_gradient(subset=["Précision (%)"], cmap="RdYlGn", vmin=50, vmax=100, axis=None)
@@ -134,9 +137,9 @@ if len(uploaded_files) >= 2:
     fig, ax = plt.subplots(figsize=(14, 6))
     for i, key in enumerate(data):
         df_tstats = pd.DataFrame(tstats_all[key])
-        ax.plot(df_tstats["Mois"], df_tstats["Tx"], label=f"{key} Tx", color=couleurs[i], linestyle="-")
-        ax.plot(df_tstats["Mois"], df_tstats["Tm"], label=f"{key} Tm", color=couleurs[i], linestyle="--")
-        ax.plot(df_tstats["Mois"], df_tstats["Tn"], label=f"{key} Tn", color=couleurs[i], linestyle=":")
+        ax.plot(df_tstats["Mois"], df_tstats["Tx"], label=f"{file_names[key]} Tx", color=couleurs[i], linestyle="-")
+        ax.plot(df_tstats["Mois"], df_tstats["Tm"], label=f"{file_names[key]} Tm", color=couleurs[i], linestyle="--")
+        ax.plot(df_tstats["Mois"], df_tstats["Tn"], label=f"{file_names[key]} Tn", color=couleurs[i], linestyle=":")
 
     ax.set_title("Tn/Tm/Tx mensuels pour toutes les sources")
     ax.set_ylabel("Température (°C)")
@@ -160,7 +163,7 @@ if len(uploaded_files) >= 2:
             start_idx = sum(heures_par_mois[:mois_num-1])
             mod_mois = model_values[start_idx:start_idx + heures_par_mois[mois_num-1]]
             mod_counts, _ = np.histogram(mod_mois, bins=bin_edges)
-            ax.bar(bin_labels + i * 0.2, mod_counts, width=0.2, label=f"{key}", color=couleurs[i])
+            ax.bar(bin_labels + i * 0.2, mod_counts, width=0.2, label=f"{file_names[key]}", color=couleurs[i])
 
         ax.set_title(f"{mois} - Histogramme des températures (1 °C)")
         ax.set_xlabel("Température (°C)")
@@ -176,7 +179,7 @@ if len(uploaded_files) >= 2:
     for i, key in enumerate(data):
         model_values = data[key]
         mod_counts, _ = np.histogram(model_values, bins=bin_edges)
-        ax.bar(bin_labels + i * 0.2, mod_counts, width=0.2, label=f"{key}", color=couleurs[i])
+        ax.bar(bin_labels + i * 0.2, mod_counts, width=0.2, label=f"{file_names[key]}", color=couleurs[i])
 
     ax.set_title("Histogramme annuel des températures (1 °C)")
     ax.set_xlabel("Température (°C)")
@@ -198,7 +201,7 @@ if len(uploaded_files) >= 2:
             mod_mois = model_values[start_idx:start_idx + heures_par_mois[mois_num-1]]
             mod_mois_sorted = np.sort(mod_mois)
             cdf = np.arange(1, len(mod_mois_sorted) + 1) / len(mod_mois_sorted)
-            ax.plot(mod_mois_sorted, cdf, label=f"{key}", color=couleurs[i])
+            ax.plot(mod_mois_sorted, cdf, label=f"{file_names[key]}", color=couleurs[i])
 
         ax.set_title(f"{mois} - Courbe CDF")
         ax.set_xlabel("Température (°C)")
@@ -215,7 +218,7 @@ if len(uploaded_files) >= 2:
         model_values = data[key]
         model_values_sorted = np.sort(model_values)
         cdf = np.arange(1, len(model_values_sorted) + 1) / len(model_values_sorted)
-        ax.plot(model_values_sorted, cdf, label=f"{key}", color=couleurs[i])
+        ax.plot(model_values_sorted, cdf, label=f"{file_names[key]}", color=couleurs[i])
 
     ax.set_title("Courbe CDF annuelle")
     ax.set_xlabel("Température (°C)")
