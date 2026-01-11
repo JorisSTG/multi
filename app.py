@@ -97,6 +97,48 @@ if len(uploaded_files) >= 2:
             Tm_jour_all[k].append(tm)
             Tx_jour_all[k].append(tx)
 
+    # -------- Nouvelle fonction : indice de recouvrement --------
+    def precision_overlap(a, b, bin_width=1.0):
+        """
+        Calcule l'indice de recouvrement (%) entre deux séries de données.
+        bin_width : largeur des tranches pour l'histogramme (en °C)
+        """
+        if len(a) == 0 or len(b) == 0:
+            return np.nan
+    
+        # Définir les bornes de l'histogramme
+        min_val = min(np.min(a), np.min(b))
+        max_val = max(np.max(a), np.max(b))
+        bins = np.arange(min_val, max_val + bin_width, bin_width)
+    
+        # Calcul des histogrammes normalisés
+        hist_a, _ = np.histogram(a, bins=bins, density=True)
+        hist_b, _ = np.histogram(b, bins=bins, density=True)
+    
+        # Indice de recouvrement
+        overlap = np.sum(np.minimum(hist_a, hist_b) * bin_width)
+        indice_percent = overlap * 100
+        return round(indice_percent, 2)
+    
+    
+    # -------- Calcul de précision mensuelle --------
+    st.subheader("Précision mensuelle par recouvrement (%) par rapport à la source 1")
+    
+    results_precision = {k: [] for k in data}
+    ref_key = "source_1"  # Référence pour comparaison
+    
+    for mois_num in range(12):
+        ref = Tm_jour_all[ref_key][mois_num]  # Tm journalière de la source 1
+        for k in data:
+            comp = Tm_jour_all[k][mois_num]
+            precision = precision_overlap(ref, comp)
+            results_precision[k].append(precision)
+    
+    # Création du DataFrame et affichage
+    df_precision = pd.DataFrame(results_precision)
+    df_precision["Mois"] = list(mois_noms.values())
+    st.dataframe(df_precision.set_index("Mois"), use_container_width=True)
+
     # =========================================================
     # ================== HISTOGRAMMES ========================
     # =========================================================
