@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.stats import norm
 
 # ---- STYLE sombre pour se fondre avec le thème Streamlit ----
 plt.style.use("dark_background")
@@ -29,14 +28,6 @@ st.markdown(
 heures_par_mois = [744, 672, 744, 720, 744, 720, 744, 744, 720, 744, 720, 744]
 percentiles_list = [10, 25, 50, 75, 90]
 couleurs = ["goldenrod", "lightgray", "lightblue", "lightgreen", "salmon", "cyan", "magenta", "orange"]
-vmaxT = 5
-vminT = -5
-vmaxP = 100
-vminP = 50
-vmaxH = 100
-vminH = -100
-vmaxDJU = 150
-vminDJU = -150
 
 # -------- Noms des mois --------
 mois_noms = {
@@ -90,6 +81,7 @@ if len(uploaded_files) >= 2:
 
     # -------- Comparaison de toutes les sources --------
     results_all = {key: [] for key in data}
+    tstats_all = {key: [] for key in data}
 
     # -------- Boucle sur les mois --------
     for mois_num, nb_heures in enumerate(heures_par_mois, start=1):
@@ -110,41 +102,10 @@ if len(uploaded_files) >= 2:
                 "Précision (%)": pct_precision
             })
 
-    # -------- DataFrame consolidé --------
-    df_results = pd.DataFrame()
-    for key in results_all:
-        df_source = pd.DataFrame(results_all[key])
-        df_source["Source"] = key
-        df_results = pd.concat([df_results, df_source], ignore_index=True)
-
-    # -------- Affichage du tableau --------
-    st.subheader("Précision par mois pour toutes les sources")
-    df_results_styled = (
-        df_results.style
-        .background_gradient(subset=["Précision (%)"], cmap="RdYlGn", vmin=vminP, vmax=vmaxP, axis=None)
-        .format({"Précision (%)": "{:.2f}", "RMSE (°C)": "{:.2f}"})
-    )
-    st.dataframe(df_results_styled, hide_index=True)
-
-    # -------- Graphiques superposés --------
-    st.subheader("Comparaison des températures mensuelles (Tn/Tm/Tx)")
-
-    # Calcul des Tn/Tm/Tx pour chaque source
-    tstats_all = {key: [] for key in data}
-    for mois_num in range(1, 13):
-        mois = mois_noms[mois_num]
-        ref_vals = df_ref[df_ref["month_num"] == mois_num]["T2m"].values
-        ref_tn = np.min(ref_vals)
-        ref_tm = np.mean(ref_vals)
-        ref_tx = np.max(ref_vals)
-
-        for key in data:
-            model_values = data[key]
-            start_idx = sum(heures_par_mois[:mois_num-1])
-            mod_vals = model_values[start_idx:start_idx + heures_par_mois[mois_num-1]]
-            mod_tn = np.min(mod_vals)
-            mod_tm = np.mean(mod_vals)
-            mod_tx = np.max(mod_vals)
+            # Calcul des Tn/Tm/Tx pour chaque source
+            mod_tn = np.min(mod_mois)
+            mod_tm = np.mean(mod_mois)
+            mod_tx = np.max(mod_mois)
 
             tstats_all[key].append({
                 "Mois": mois,
@@ -153,7 +114,25 @@ if len(uploaded_files) >= 2:
                 "Tx": mod_tx
             })
 
-    # Tracé des courbes
+    # -------- DataFrame consolidé pour les RMSE/Précision --------
+    df_results = pd.DataFrame()
+    for key in results_all:
+        df_source = pd.DataFrame(results_all[key])
+        df_source["Source"] = key
+        df_results = pd.concat([df_results, df_source], ignore_index=True)
+
+    # -------- Affichage du tableau des RMSE/Précision --------
+    st.subheader("Précision par mois pour toutes les sources")
+    df_results_styled = (
+        df_results.style
+        .background_gradient(subset=["Précision (%)"], cmap="RdYlGn", vmin=50, vmax=100, axis=None)
+        .format({"Précision (%)": "{:.2f}", "RMSE (°C)": "{:.2f}"})
+    )
+    st.dataframe(df_results_styled, hide_index=True)
+
+    # -------- Graphiques superposés Tn/Tm/Tx --------
+    st.subheader("Comparaison des températures mensuelles (Tn/Tm/Tx)")
+
     fig, ax = plt.subplots(figsize=(14, 6))
     for i, key in enumerate(data):
         df_tstats = pd.DataFrame(tstats_all[key])
@@ -168,23 +147,24 @@ if len(uploaded_files) >= 2:
     st.pyplot(fig)
     plt.close(fig)
 
-    # -------- Tableau des différences --------
+    # -------- Tableau des différences par rapport à la référence --------
     st.subheader("Différences par rapport à la référence (source 1)")
     df_diff = pd.DataFrame()
+    ref_tstats = pd.DataFrame(tstats_all[ref_key])
+
     for key in data:
         if key == ref_key:
             continue
         df_source = pd.DataFrame(tstats_all[key])
         df_source["Source"] = key
-        df_source["Diff_Tn"] = df_source["Tn"] - tstats_all[ref_key][-1]["Tn"]
-        df_source["Diff_Tm"] = df_source["Tm"] - tstats_all[ref_key][-1]["Tm"]
-        df_source["Diff_Tx"] = df_source["Tx"] - tstats_all[ref_key][-1]["Tx"]
+        df_source["Diff_Tn"] = df_source["Tn"] - ref_tstats["Tn"]
+        df_source["Diff_Tm"] = df_source["Tm"] - ref_tstats["Tm"]
+        df_source["Diff_Tx"] = df_source["Tx"] - ref_tstats["Tx"]
         df_diff = pd.concat([df_diff, df_source], ignore_index=True)
 
     df_diff_styled = (
         df_diff.style
-        .background_gradient(subset=["Diff_Tn", "Diff_Tm", "Diff_Tx"], cmap="bwr", vmin=vminT, vmax=vmaxT)
+        .background_gradient(subset=["Diff_Tn", "Diff_Tm", "Diff_Tx"], cmap="bwr", vmin=-5, vmax=5)
         .format("{:.2f}")
     )
     st.dataframe(df_diff_styled, hide_index=True)
-
