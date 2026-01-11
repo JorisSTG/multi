@@ -121,23 +121,169 @@ if len(uploaded_files) >= 2:
         return round(indice_percent, 2)
     
     
-    # -------- Calcul de précision mensuelle --------
+    # -------- Calcul de précision mensuelle (sans source 1) --------
     st.subheader("Précision mensuelle par recouvrement (%) par rapport à la source 1")
     
-    results_precision = {k: [] for k in data}
+    results_precision = {}
     ref_key = "source_1"  # Référence pour comparaison
+    
+    for k in data:
+        if k == ref_key:
+            continue  # on ne calcule pas pour la source 1
+        results_precision[k] = []
     
     for mois_num in range(12):
         ref = Tm_jour_all[ref_key][mois_num]  # Tm journalière de la source 1
         for k in data:
+            if k == ref_key:
+                continue
             comp = Tm_jour_all[k][mois_num]
             precision = precision_overlap(ref, comp)
             results_precision[k].append(precision)
     
-    # Création du DataFrame et affichage
+    # -------- DataFrame final avec style ----------
     df_precision = pd.DataFrame(results_precision)
     df_precision["Mois"] = list(mois_noms.values())
-    st.dataframe(df_precision.set_index("Mois"), use_container_width=True)
+    
+    # Dégradé couleur comme ton exemple
+    vminP = 50
+    vmaxP = 100
+    df_precision_styled = (
+        df_precision.style
+        .background_gradient(subset=df_precision.columns[:-1], cmap="RdYlGn", vmin=vminP, vmax=vmaxP, axis=None)
+        .format({col: "{:.2f}" for col in df_precision.columns[:-1]})
+    )
+    
+    st.dataframe(df_precision_styled.set_index("Mois"), use_container_width=True)
+
+    # -------- Seuils supérieurs et inférieurs --------
+    t_sup_thresholds = st.text_input("Seuils Tmax supérieur (°C, séparés par des / )", "25/30")
+    t_inf_thresholds = st.text_input("Seuils Tmin inférieur (°C, séparés par des / )", "0/5")
+    t_sup_thresholds_list = [float(x.strip()) for x in t_sup_thresholds.split("/")]
+    t_inf_thresholds_list = [float(x.strip()) for x in t_inf_thresholds.split("/")]
+    
+    # Valeurs pour les couleurs
+    vminH = -50  # ajuster selon vos écarts
+    vmaxH = 50
+    
+    # -------- Statistiques mensuelles --------
+    stats_sup = []
+    stats_inf = []
+    
+    ref_key = "source_1"
+    
+    for mois_num in range(12):
+        mois = mois_noms[mois_num+1]
+        ref = Tm_jour_all[ref_key][mois_num]  # Tm journalière source 1
+    
+        for k in data:
+            if k == ref_key:
+                continue
+            comp = Tm_jour_all[k][mois_num]
+    
+            # Supérieurs
+            for seuil in t_sup_thresholds_list:
+                heures_ref = np.sum(ref > seuil)
+                heures_comp = np.sum(comp > seuil)
+                ecart = heures_comp - heures_ref
+                stats_sup.append({
+                    "Mois": mois,
+                    "Seuil (°C)": f"{seuil}",
+                    f"Heures {file_names[ref_key]}": int(heures_ref),
+                    f"Heures {file_names[k]}": int(heures_comp),
+                    "Ecart": int(ecart)
+                })
+    
+            # Inférieurs
+            for seuil in t_inf_thresholds_list:
+                heures_ref = np.sum(ref < seuil)
+                heures_comp = np.sum(comp < seuil)
+                ecart = heures_comp - heures_ref
+                stats_inf.append({
+                    "Mois": mois,
+                    "Seuil (°C)": f"{seuil}",
+                    f"Heures {file_names[ref_key]}": int(heures_ref),
+                    f"Heures {file_names[k]}": int(heures_comp),
+                    "Ecart": int(ecart)
+                })
+    
+    # DataFrames mensuels
+    df_sup = pd.DataFrame(stats_sup)
+    df_inf = pd.DataFrame(stats_inf)
+    
+    # Style : supérieurs → rouge = plus chaud
+    df_sup_styled = (
+        df_sup.style
+        .background_gradient(subset=["Ecart"], cmap="bwr", vmin=vminH, vmax=vmaxH, axis=None)
+    )
+    st.subheader("Nombre d'heures supérieur au(x) seuil(s) par mois")
+    st.dataframe(df_sup_styled, hide_index=True)
+    
+    # Style : inférieurs → rouge = plus froid
+    df_inf_styled = (
+        df_inf.style
+        .background_gradient(subset=["Ecart"], cmap="bwr_r", vmin=vminH, vmax=vmaxH, axis=None)
+    )
+    st.subheader("Nombre d'heures inférieur au(x) seuil(s) par mois")
+    st.dataframe(df_inf_styled, hide_index=True)
+    
+    # -------- Statistiques annuelles --------
+    annual_sup = []
+    annual_inf = []
+    
+    for k in data:
+        if k == ref_key:
+            continue
+    
+        ref_all = np.concatenate(Tm_jour_all[ref_key])
+        comp_all = np.concatenate(Tm_jour_all[k])
+    
+        # Supérieurs
+        for seuil in t_sup_thresholds_list:
+            heures_ref = np.sum(ref_all > seuil)
+            heures_comp = np.sum(comp_all > seuil)
+            ecart = heures_comp - heures_ref
+            annual_sup.append({
+                "Période": "Année",
+                "Seuil (°C)": f"{seuil}",
+                f"Heures {file_names[ref_key]}": int(heures_ref),
+                f"Heures {file_names[k]}": int(heures_comp),
+                "Ecart": int(ecart)
+            })
+    
+        # Inférieurs
+        for seuil in t_inf_thresholds_list:
+            heures_ref = np.sum(ref_all < seuil)
+            heures_comp = np.sum(comp_all < seuil)
+            ecart = heures_comp - heures_ref
+            annual_inf.append({
+                "Période": "Année",
+                "Seuil (°C)": f"{seuil}",
+                f"Heures {file_names[ref_key]}": int(heures_ref),
+                f"Heures {file_names[k]}": int(heures_comp),
+                "Ecart": int(ecart)
+            })
+    
+    # DataFrames annuels
+    df_sup_year = pd.DataFrame(annual_sup)
+    df_inf_year = pd.DataFrame(annual_inf)
+    
+    # Style annuel
+    df_sup_year_styled = (
+        df_sup_year.style
+        .background_gradient(subset=["Ecart"], cmap="bwr", vmin=vminH*12, vmax=vmaxH*12, axis=None)
+    )
+    st.subheader("Somme annuelle — Nombre d'heures supérieur au(x) seuil(s)")
+    st.dataframe(df_sup_year_styled, hide_index=True)
+    
+    df_inf_year_styled = (
+        df_inf_year.style
+        .background_gradient(subset=["Ecart"], cmap="bwr_r", vmin=vminH*12, vmax=vmaxH*12, axis=None)
+    )
+    st.subheader("Somme annuelle — Nombre d'heures inférieur au(x) seuil(s)")
+    st.dataframe(df_inf_year_styled, hide_index=True)
+
+
 
     # =========================================================
     # ================== HISTOGRAMMES ========================
