@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-# ---- STYLE sombre pour se fondre avec le thème Streamlit ----
+# ---- STYLE sombre ----
 plt.style.use("dark_background")
 plt.rcParams.update({
     "figure.facecolor": "none",
@@ -17,166 +17,140 @@ plt.rcParams.update({
 })
 
 st.title("Comparaison multisource")
-st.markdown("""
-L’objectif de cette application est d’évaluer la précision et la cohérence entre **N jeux de données** (température uniquement) à des fins de simulations STD.
-""")
+st.markdown(
+    "L’objectif de cette application est d’évaluer la précision et la cohérence entre **N jeux de données** (température uniquement).",
+    unsafe_allow_html=True
+)
 
-# -------- Paramètres généraux --------
+# -------- Paramètres --------
 heures_par_mois = [744, 672, 744, 720, 744, 720, 744, 744, 720, 744, 720, 744]
-mois_noms = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"]
 couleurs = ["goldenrod", "lightgray", "navy", "green", "darkmagenta", "peru", "silver", "orange"]
 
+# -------- Mois --------
+mois_noms = {
+    1: "Janvier", 2: "Février", 3: "Mars", 4: "Avril", 5: "Mai", 6: "Juin",
+    7: "Juillet", 8: "Août", 9: "Septembre", 10: "Octobre", 11: "Novembre", 12: "Décembre"
+}
+
 # -------- Upload --------
-uploaded_files = st.file_uploader("Déposer les fichiers CSV (colonne unique T°C) :", type=["csv"], accept_multiple_files=True)
+uploaded_files = st.file_uploader("Déposer les fichiers CSV :", type=["csv"], accept_multiple_files=True)
 
 if len(uploaded_files) >= 2:
 
-    # -------- Lecture --------
     data, file_names = {}, {}
     for i, file in enumerate(uploaded_files):
         key = f"source_{i+1}"
+        data[key] = pd.read_csv(file).iloc[:, 0].values
         file_names[key] = file.name.replace(".csv", "")
-        data[key] = pd.read_csv(file).iloc[:,0].values
 
-    # -------- PARAMÈTRES BARRES --------
-    n_sources = len(data)
-    group_width = 0.8
-    group_margin = 0.1
-    bar_width = group_width / n_sources
+    n_files = len(data)
 
-    def bar_positions(x, i):
-        return x - group_width/2 + bar_width/2 + i*bar_width
+    # -------- Param barres --------
+    group_width = 1 - 0.2
+    bar_width = group_width / n_files
+    offsets = (np.arange(n_files) - (n_files-1)/2) * bar_width
 
     # -------- Fonctions --------
     def daily_stats_from_hourly(hourly):
-        n = len(hourly)//24
-        arr = np.array(hourly[:n*24]).reshape(n,24)
-        return arr.min(1), arr.mean(1), arr.max(1)
+        n = len(hourly) // 24
+        arr = np.array(hourly[:n*24]).reshape((n, 24))
+        return arr.min(axis=1), arr.mean(axis=1), arr.max(axis=1)
 
-    def nombre_jours_vague(T):
-        T = np.array(T)
-        jours = np.zeros(len(T), bool)
-        jours[T >= 25.3] = True
-        i = 0
-        while i < len(T):
-            if i+2 < len(T) and np.all(T[i:i+3] >= 23.4):
-                j = i+3
-                while j < len(T) and T[j] >= 23.4: j+=1
-                jours[i:j] = True
-                i = j
-            else: i+=1
-        return int(jours.sum()), jours
+    # -------- Stats journalières --------
+    Tn_jour_all = {k: [] for k in data}
+    Tm_jour_all = {k: [] for k in data}
+    Tx_jour_all = {k: [] for k in data}
 
-    # -------- Tn/Tm/Tx mensuels --------
-    tstats = {k:[] for k in data}
-    for m in range(12):
-        idx0 = sum(heures_par_mois[:m])
-        idx1 = sum(heures_par_mois[:m+1])
+    for mois in range(1, 13):
+        i0 = sum(heures_par_mois[:mois-1])
+        i1 = sum(heures_par_mois[:mois])
         for k in data:
-            x = data[k][idx0:idx1]
-            tstats[k].append([x.min(), (x.min()+x.max())/2, x.max()])
-
-    st.subheader("Tn / Tm / Tx mensuels")
-    fig, ax = plt.subplots(figsize=(14,6))
-    for i,k in enumerate(data):
-        arr = np.array(tstats[k])
-        ax.plot(mois_noms, arr[:,2], "-", label=f"{file_names[k]} Tx", color=couleurs[i])
-        ax.plot(mois_noms, arr[:,1], "--", label=f"{file_names[k]} Tm", color=couleurs[i])
-        ax.plot(mois_noms, arr[:,0], ":", label=f"{file_names[k]} Tn", color=couleurs[i])
-    ax.legend()
-    ax.tick_params(axis='x', rotation=45)
-    st.pyplot(fig); plt.close()
-
-    # -------- Tn/Tm/Tx journaliers --------
-    Tn_jour_all, Tm_jour_all, Tx_jour_all = {k:[] for k in data}, {k:[] for k in data}, {k:[] for k in data}
-
-    for m in range(12):
-        idx0 = sum(heures_par_mois[:m])
-        idx1 = sum(heures_par_mois[:m+1])
-        for k in data:
-            tn, tm, tx = daily_stats_from_hourly(data[k][idx0:idx1])
+            tn, tm, tx = daily_stats_from_hourly(data[k][i0:i1])
             Tn_jour_all[k].append(tn)
             Tm_jour_all[k].append(tm)
             Tx_jour_all[k].append(tx)
 
-    # -------- Vagues de chaleur --------
-    jours_par_mois = [h//24 for h in heures_par_mois]
-    df_vagues = {}
+    # =========================================================
+    # ================== HISTOGRAMMES ========================
+    # =========================================================
 
-    for k in data:
-        Tm_all = np.concatenate(Tm_jour_all[k])
-        _, mask = nombre_jours_vague(Tm_all)
-        idx = 0
-        df_vagues[k] = []
-        for L in jours_par_mois:
-            df_vagues[k].append(int(mask[idx:idx+L].sum()))
-            idx += L
+    st.subheader("Histogrammes mensuels (1°C)")
 
-    df_vagues = pd.DataFrame(df_vagues, index=mois_noms)
-    st.subheader("Vagues de chaleur")
-    st.dataframe(df_vagues)
+    bin_edges = np.arange(-10, 46, 1)
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
 
-    fig, ax = plt.subplots(figsize=(12,5))
-    x = np.arange(12)
-    for i,k in enumerate(data):
-        ax.bar(bar_positions(x,i), df_vagues[k], width=bar_width, label=file_names[k], color=couleurs[i])
-    ax.set_xticks(x)
-    ax.set_xticklabels(mois_noms, rotation=45)
+    for m in range(12):
+
+        fig, ax = plt.subplots(figsize=(12,4))
+
+        for i, k in enumerate(data):
+            counts, _ = np.histogram(data[k][sum(heures_par_mois[:m]):sum(heures_par_mois[:m+1])],
+                                      bins=bin_edges)
+            ax.bar(bin_centers + offsets[i], counts, width=bar_width,
+                   color=couleurs[i], label=file_names[k])
+
+        ax.set_title(f"{mois_noms[m+1]} – Histogramme températures")
+        ax.set_xlabel("Température (°C)")
+        ax.set_ylabel("Nombre d'heures")
+        ax.legend()
+        st.pyplot(fig)
+        plt.close(fig)
+
+    # -------- Histogramme annuel --------
+    st.subheader("Histogramme annuel (1°C)")
+
+    fig, ax = plt.subplots(figsize=(13,4))
+
+    for i, k in enumerate(data):
+        counts, _ = np.histogram(data[k], bins=bin_edges)
+        ax.bar(bin_centers + offsets[i], counts, width=bar_width,
+               color=couleurs[i], label=file_names[k])
+
+    ax.set_title("Histogramme annuel températures")
+    ax.set_xlabel("Température (°C)")
+    ax.set_ylabel("Nombre d'heures")
     ax.legend()
-    st.pyplot(fig); plt.close()
+    st.pyplot(fig)
+    plt.close(fig)
 
-    # -------- Jours chauds / nuits tropicales --------
-    st.subheader("Jours chauds et nuits tropicales")
-    tx_seuil = st.number_input("Tx jour >",25)
-    tn_seuil = st.number_input("Tn nuit >",20)
+    # =========================================================
+    # ====================== CDF ==============================
+    # =========================================================
 
-    jc, nt = {}, {}
-    for k in data:
-        jc[k] = [int(np.sum(Tx_jour_all[k][m] > tx_seuil)) for m in range(12)]
-        nt[k] = [int(np.sum(Tn_jour_all[k][m] > tn_seuil)) for m in range(12)]
+    # -------- CDF mensuelles --------
+    st.subheader("CDF mensuelles – Tm journalière")
 
-    fig, ax = plt.subplots(2,1,figsize=(14,8))
-    for i,k in enumerate(data):
-        ax[0].bar(bar_positions(x,i), jc[k], width=bar_width, label=file_names[k], color=couleurs[i])
-        ax[1].bar(bar_positions(x,i), nt[k], width=bar_width, label=file_names[k], color=couleurs[i])
+    for m in range(12):
 
-    for a in ax:
-        a.set_xticks(x)
-        a.set_xticklabels(mois_noms, rotation=45)
-        a.legend()
+        fig, ax = plt.subplots(figsize=(7,4))
 
-    ax[0].set_title("Jours chauds")
-    ax[1].set_title("Nuits tropicales")
-    st.pyplot(fig); plt.close()
+        for i, k in enumerate(data):
+            X = np.sort(Tm_jour_all[k][m])
+            F = np.arange(1, len(X)+1) / len(X)
+            ax.plot(X, F, color=couleurs[i], label=file_names[k])
 
-    # -------- DJC / DJF --------
-    st.subheader("DJC / DJF")
-    base_c = st.number_input("Base DJC",19)
-    base_f = st.number_input("Base DJF",23)
+        ax.set_title(f"CDF Tm – {mois_noms[m+1]}")
+        ax.set_xlabel("Température (°C)")
+        ax.set_ylabel("Probabilité cumulée")
+        ax.grid(alpha=0.3)
+        ax.legend()
+        st.pyplot(fig)
+        plt.close(fig)
 
-    DJC, DJF = {}, {}
-    for k in data:
-        DJC[k], DJF[k] = [], []
-        for m in range(12):
-            Tm = (Tx_jour_all[k][m] + Tn_jour_all[k][m]) / 2
-            DJC[k].append(np.sum(np.maximum(0, base_c - Tm)))
-            DJF[k].append(np.sum(np.maximum(0, Tm - base_f)))
+    # -------- CDF annuelle --------
+    st.subheader("CDF annuelle – Tm journalière")
 
-    fig, ax = plt.subplots(2,1,figsize=(14,8))
-    for i,k in enumerate(data):
-        ax[0].bar(bar_positions(x,i), DJC[k], width=bar_width, label=file_names[k], color=couleurs[i])
-        ax[1].bar(bar_positions(x,i), DJF[k], width=bar_width, label=file_names[k], color=couleurs[i])
+    fig, ax = plt.subplots(figsize=(8,5))
 
-    for a in ax:
-        a.set_xticks(x)
-        a.set_xticklabels(mois_noms, rotation=45)
-        a.legend()
+    for i, k in enumerate(data):
+        X = np.sort(np.concatenate(Tm_jour_all[k]))
+        F = np.arange(1, len(X)+1) / len(X)
+        ax.plot(X, F, color=couleurs[i], label=file_names[k])
 
-    ax[0].set_title("DJC mensuel")
-    ax[1].set_title("DJF mensuel")
-    st.pyplot(fig); plt.close()
-
-    st.subheader("Sommes annuelles")
-    for k in data:
-        st.write(f"{file_names[k]} → DJC={int(sum(DJC[k]))} | DJF={int(sum(DJF[k]))}")
-
+    ax.set_title("CDF annuelle Tm")
+    ax.set_xlabel("Température (°C)")
+    ax.set_ylabel("Probabilité cumulée")
+    ax.grid(alpha=0.3)
+    ax.legend()
+    st.pyplot(fig)
+    plt.close(fig)
