@@ -31,10 +31,10 @@ couleurs = ["goldenrod", "lightgray", "lightblue", "lightgreen", "salmon", "cyan
 
 # -------- Noms des mois --------
 mois_noms = {
-    1: "01 - Janvier", 2: "02 - Février", 3: "03 - Mars",
-    4: "04 - Avril", 5: "05 - Mai", 6: "06 - Juin",
-    7: "07 - Juillet", 8: "08 - Août", 9: "09 - Septembre",
-    10: "10 - Octobre", 11: "11 - Novembre", 12: "12 - Décembre"
+    1: "Janvier", 2: "Février", 3: "Mars",
+    4: "Avril", 5: "Mai", 6: "Juin",
+    7: "Juillet", 8: "Août", 9: "Septembre",
+    10: "Octobre", 11: "Novembre", 12: "Décembre"
 }
 
 # -------- Upload des fichiers CSV --------
@@ -56,10 +56,8 @@ if len(uploaded_files) >= 2:
     ref_key = "source_1"
     ref_values = data[ref_key]
     df_ref = pd.DataFrame({"T2m": ref_values})
-    df_ref["year"] = 2023
     df_ref["month_num"] = pd.concat([pd.Series([m] * h) for m, h in enumerate(heures_par_mois, start=1)], ignore_index=True)
     df_ref["month"] = df_ref["month_num"].map(mois_noms)
-    df_ref["day"] = pd.concat([pd.Series(range(1, h // 24 + 2)) for h in heures_par_mois], ignore_index=True)[:len(ref_values)]
 
     # -------- Fonctions utilitaires --------
     def rmse(a, b):
@@ -149,7 +147,9 @@ if len(uploaded_files) >= 2:
 
     # -------- Tableau des différences par rapport à la référence --------
     st.subheader("Différences par rapport à la référence (source 1)")
-    df_diff = pd.DataFrame()
+
+    # Création d'un DataFrame pour les différences
+    df_diff_list = []
     ref_tstats = pd.DataFrame(tstats_all[ref_key])
 
     for key in data:
@@ -157,14 +157,17 @@ if len(uploaded_files) >= 2:
             continue
         df_source = pd.DataFrame(tstats_all[key])
         df_source["Source"] = key
-        df_source["Diff_Tn"] = df_source["Tn"] - ref_tstats["Tn"]
-        df_source["Diff_Tm"] = df_source["Tm"] - ref_tstats["Tm"]
-        df_source["Diff_Tx"] = df_source["Tx"] - ref_tstats["Tx"]
-        df_diff = pd.concat([df_diff, df_source], ignore_index=True)
+        df_source["Diff_Tn"] = df_source["Tn"].astype(float) - ref_tstats["Tn"].astype(float)
+        df_source["Diff_Tm"] = df_source["Tm"].astype(float) - ref_tstats["Tm"].astype(float)
+        df_source["Diff_Tx"] = df_source["Tx"].astype(float) - ref_tstats["Tx"].astype(float)
+        df_diff_list.append(df_source)
 
+    df_diff = pd.concat(df_diff_list, ignore_index=True)
+
+    # Affichage du DataFrame des différences
     df_diff_styled = (
         df_diff.style
         .background_gradient(subset=["Diff_Tn", "Diff_Tm", "Diff_Tx"], cmap="bwr", vmin=-5, vmax=5)
-        .format("{:.2f}")
+        .format("{:.2f}", subset=["Diff_Tn", "Diff_Tm", "Diff_Tx"])
     )
     st.dataframe(df_diff_styled, hide_index=True)
