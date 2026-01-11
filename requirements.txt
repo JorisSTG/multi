@@ -1,0 +1,9 @@
+streamlit
+pandas
+xarray
+h5netcdf
+numpy
+matplotlib
+scipy
+seaborn
+reportlab
