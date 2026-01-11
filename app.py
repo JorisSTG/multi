@@ -271,11 +271,15 @@ if len(uploaded_files) >= 2:
     # =========================================================
     # ====================== CDF ==============================
     # =========================================================
-    st.subheader("CDF mensuelles – Tm journalière")
+    st.subheader("CDF mensuelles – toutes les valeurs du mois")
+    
     for m in range(12):
         fig, ax = plt.subplots(figsize=(7,4))
         for i, k in enumerate(data):
-            X = np.sort(Tm_jour_all[k][m])
+            # Toutes les valeurs du mois m
+            X = np.sort(np.concatenate(Tm_jour_all[k][m]))  # concaténer si Tm_jour_all[k][m] contient plusieurs sous-listes/heures
+            if len(X) == 0:
+                continue
             F = np.arange(1, len(X)+1) / len(X)
             ax.plot(X, F, color=couleurs[i], label=file_names[k])
         ax.set_title(f"CDF Tm – {mois_noms[m+1]}")
@@ -285,11 +289,14 @@ if len(uploaded_files) >= 2:
         ax.legend()
         st.pyplot(fig)
         plt.close(fig)
-
-    st.subheader("CDF annuelle – Tm journalière")
+    
+    st.subheader("CDF annuelle – toutes les valeurs")
     fig, ax = plt.subplots(figsize=(8,5))
     for i, k in enumerate(data):
-        X = np.sort(np.concatenate(Tm_jour_all[k]))
+        # Toutes les valeurs de l'année
+        X = np.sort(np.concatenate([np.concatenate(Tm_jour_all[k][m]) for m in range(12)]))
+        if len(X) == 0:
+            continue
         F = np.arange(1, len(X)+1) / len(X)
         ax.plot(X, F, color=couleurs[i], label=file_names[k])
     ax.set_title("CDF annuelle Tm")
@@ -299,6 +306,13 @@ if len(uploaded_files) >= 2:
     ax.legend()
     st.pyplot(fig)
     plt.close(fig)
+    
+    # Pour les graphiques en barres (vagues, jours chauds/nuits, DJC/DJF)
+    n_files = len(data)
+    bar_width = group_width / n_files
+    offsets = (np.arange(n_files) - (n_files-1)/2) * bar_width
+    x = np.arange(12)
+
 
     n_files = len(data)
     bar_width = group_width / n_files
