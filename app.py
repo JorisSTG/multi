@@ -149,134 +149,88 @@ if len(uploaded_files) >= 2:
     st.subheader("Précision mensuelle par recouvrement (%) par rapport à la source 1")
     st.dataframe(df_precision_styled, use_container_width=True)
 
-
     # -------- Seuils supérieurs et inférieurs --------
     t_sup_thresholds = st.text_input("Seuils Tmax supérieur (°C, séparés par des / )", "25/30")
     t_inf_thresholds = st.text_input("Seuils Tmin inférieur (°C, séparés par des / )", "0/5")
     t_sup_thresholds_list = [float(x.strip()) for x in t_sup_thresholds.split("/")]
     t_inf_thresholds_list = [float(x.strip()) for x in t_inf_thresholds.split("/")]
     
-    # Valeurs pour les couleurs
-    vminH = -50  # ajuster selon vos écarts
-    vmaxH = 50
-    
     # -------- Statistiques mensuelles --------
     stats_sup = []
     stats_inf = []
     
-    ref_key = "source_1"
-    
     for mois_num in range(12):
         mois = mois_noms[mois_num+1]
-        ref = Tm_jour_all[ref_key][mois_num]  # Tm journalière source 1
-    
+        
         for k in data:
-            if k == ref_key:
-                continue
-            comp = Tm_jour_all[k][mois_num]
-    
+            mod = Tm_jour_all[k][mois_num]
+            
             # Supérieurs
             for seuil in t_sup_thresholds_list:
-                heures_ref = np.sum(ref > seuil)
-                heures_comp = np.sum(comp > seuil)
-                ecart = heures_comp - heures_ref
+                nb_heures = np.sum(mod > seuil)
                 stats_sup.append({
                     "Mois": mois,
                     "Seuil (°C)": f"{seuil}",
-                    f"Heures {file_names[ref_key]}": int(heures_ref),
-                    f"Heures {file_names[k]}": int(heures_comp),
-                    "Ecart": int(ecart)
+                    "Source": file_names[k],
+                    "Heures": int(nb_heures)
                 })
-    
+            
             # Inférieurs
             for seuil in t_inf_thresholds_list:
-                heures_ref = np.sum(ref < seuil)
-                heures_comp = np.sum(comp < seuil)
-                ecart = heures_comp - heures_ref
+                nb_heures = np.sum(mod < seuil)
                 stats_inf.append({
                     "Mois": mois,
                     "Seuil (°C)": f"{seuil}",
-                    f"Heures {file_names[ref_key]}": int(heures_ref),
-                    f"Heures {file_names[k]}": int(heures_comp),
-                    "Ecart": int(ecart)
+                    "Source": file_names[k],
+                    "Heures": int(nb_heures)
                 })
     
     # DataFrames mensuels
     df_sup = pd.DataFrame(stats_sup)
     df_inf = pd.DataFrame(stats_inf)
     
-    # Style : supérieurs → rouge = plus chaud
-    df_sup_styled = (
-        df_sup.style
-        .background_gradient(subset=["Ecart"], cmap="bwr", vmin=vminH, vmax=vmaxH, axis=None)
-    )
-    st.subheader("Nombre d'heures supérieur au(x) seuil(s) par mois")
-    st.dataframe(df_sup_styled, hide_index=True)
+    st.subheader("Nombre d'heures supérieur au(x) seuil(s) par mois et par source")
+    st.dataframe(df_sup, use_container_width=True)
     
-    # Style : inférieurs → rouge = plus froid
-    df_inf_styled = (
-        df_inf.style
-        .background_gradient(subset=["Ecart"], cmap="bwr_r", vmin=vminH, vmax=vmaxH, axis=None)
-    )
-    st.subheader("Nombre d'heures inférieur au(x) seuil(s) par mois")
-    st.dataframe(df_inf_styled, hide_index=True)
+    st.subheader("Nombre d'heures inférieur au(x) seuil(s) par mois et par source")
+    st.dataframe(df_inf, use_container_width=True)
     
     # -------- Statistiques annuelles --------
     annual_sup = []
     annual_inf = []
     
     for k in data:
-        if k == ref_key:
-            continue
-    
-        ref_all = np.concatenate(Tm_jour_all[ref_key])
-        comp_all = np.concatenate(Tm_jour_all[k])
-    
+        mod_all = np.concatenate(Tm_jour_all[k])
+        
         # Supérieurs
         for seuil in t_sup_thresholds_list:
-            heures_ref = np.sum(ref_all > seuil)
-            heures_comp = np.sum(comp_all > seuil)
-            ecart = heures_comp - heures_ref
+            nb_heures = np.sum(mod_all > seuil)
             annual_sup.append({
                 "Période": "Année",
                 "Seuil (°C)": f"{seuil}",
-                f"Heures {file_names[ref_key]}": int(heures_ref),
-                f"Heures {file_names[k]}": int(heures_comp),
-                "Ecart": int(ecart)
+                "Source": file_names[k],
+                "Heures": int(nb_heures)
             })
-    
+        
         # Inférieurs
         for seuil in t_inf_thresholds_list:
-            heures_ref = np.sum(ref_all < seuil)
-            heures_comp = np.sum(comp_all < seuil)
-            ecart = heures_comp - heures_ref
+            nb_heures = np.sum(mod_all < seuil)
             annual_inf.append({
                 "Période": "Année",
                 "Seuil (°C)": f"{seuil}",
-                f"Heures {file_names[ref_key]}": int(heures_ref),
-                f"Heures {file_names[k]}": int(heures_comp),
-                "Ecart": int(ecart)
+                "Source": file_names[k],
+                "Heures": int(nb_heures)
             })
     
     # DataFrames annuels
     df_sup_year = pd.DataFrame(annual_sup)
     df_inf_year = pd.DataFrame(annual_inf)
     
-    # Style annuel
-    df_sup_year_styled = (
-        df_sup_year.style
-        .background_gradient(subset=["Ecart"], cmap="bwr", vmin=vminH*12, vmax=vmaxH*12, axis=None)
-    )
-    st.subheader("Somme annuelle — Nombre d'heures supérieur au(x) seuil(s)")
-    st.dataframe(df_sup_year_styled, hide_index=True)
+    st.subheader("Somme annuelle — Nombre d'heures supérieur au(x) seuil(s) par source")
+    st.dataframe(df_sup_year, use_container_width=True)
     
-    df_inf_year_styled = (
-        df_inf_year.style
-        .background_gradient(subset=["Ecart"], cmap="bwr_r", vmin=vminH*12, vmax=vmaxH*12, axis=None)
-    )
-    st.subheader("Somme annuelle — Nombre d'heures inférieur au(x) seuil(s)")
-    st.dataframe(df_inf_year_styled, hide_index=True)
-
+    st.subheader("Somme annuelle — Nombre d'heures inférieur au(x) seuil(s) par source")
+    st.dataframe(df_inf_year, use_container_width=True)
 
 
     # =========================================================
