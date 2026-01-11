@@ -78,7 +78,7 @@ if len(uploaded_files) >= 2:
         return round(overlap * 100, 2)
 
     # -------- Comparaison de toutes les sources --------
-    results_all = {key: [] for key in data}
+    results_all = {key: [] for key in data if key != ref_key}
     tstats_all = {key: [] for key in data}
 
     # -------- Boucle sur les mois --------
@@ -91,14 +91,14 @@ if len(uploaded_files) >= 2:
             start_idx = sum(heures_par_mois[:mois_num-1])
             mod_mois = model_values[start_idx:start_idx + nb_heures]
 
-            val_rmse = rmse(mod_mois, ref_mois)
-            pct_precision = precision_overlap(mod_mois, ref_mois)
-
-            results_all[key].append({
-                "Mois": mois,
-                "RMSE (°C)": round(val_rmse, 2),
-                "Précision (%)": pct_precision
-            })
+            if key != ref_key:
+                val_rmse = rmse(mod_mois, ref_mois)
+                pct_precision = precision_overlap(mod_mois, ref_mois)
+                results_all[key].append({
+                    "Mois": mois,
+                    "RMSE (°C)": round(val_rmse, 2),
+                    "Précision (%)": pct_precision
+                })
 
             # Calcul des Tn/Tm/Tx pour chaque source
             mod_tn = np.min(mod_mois)
@@ -120,7 +120,7 @@ if len(uploaded_files) >= 2:
         df_results = pd.concat([df_results, df_source], ignore_index=True)
 
     # -------- Affichage du tableau des RMSE/Précision --------
-    st.subheader("Précision par mois pour toutes les sources")
+    st.subheader("Précision par mois pour toutes les sources (par rapport à la source 1)")
     df_results_styled = (
         df_results.style
         .background_gradient(subset=["Précision (%)"], cmap="RdYlGn", vmin=50, vmax=100, axis=None)
@@ -145,29 +145,81 @@ if len(uploaded_files) >= 2:
     st.pyplot(fig)
     plt.close(fig)
 
-    # -------- Tableau des différences par rapport à la référence --------
-    st.subheader("Différences par rapport à la référence (source 1)")
+    # -------- Histogrammes mensuels --------
+    st.subheader("Histogrammes mensuels (tranches de 1 °C)")
 
-    # Création d'un DataFrame pour les différences
-    df_diff_list = []
-    ref_tstats = pd.DataFrame(tstats_all[ref_key])
+    bin_edges = np.arange(-10, 46, 1)
+    bin_labels = bin_edges[:-1].astype(int)
 
-    for key in data:
-        if key == ref_key:
-            continue
-        df_source = pd.DataFrame(tstats_all[key])
-        df_source["Source"] = key
-        df_source["Diff_Tn"] = df_source["Tn"].astype(float) - ref_tstats["Tn"].astype(float)
-        df_source["Diff_Tm"] = df_source["Tm"].astype(float) - ref_tstats["Tm"].astype(float)
-        df_source["Diff_Tx"] = df_source["Tx"].astype(float) - ref_tstats["Tx"].astype(float)
-        df_diff_list.append(df_source)
+    for mois_num in range(1, 13):
+        mois = mois_noms[mois_num]
+        fig, ax = plt.subplots(figsize=(12, 4))
 
-    df_diff = pd.concat(df_diff_list, ignore_index=True)
+        for i, key in enumerate(data):
+            model_values = data[key]
+            start_idx = sum(heures_par_mois[:mois_num-1])
+            mod_mois = model_values[start_idx:start_idx + heures_par_mois[mois_num-1]]
+            mod_counts, _ = np.histogram(mod_mois, bins=bin_edges)
+            ax.bar(bin_labels + i * 0.2, mod_counts, width=0.2, label=f"{key}", color=couleurs[i])
 
-    # Affichage du DataFrame des différences
-    df_diff_styled = (
-        df_diff.style
-        .background_gradient(subset=["Diff_Tn", "Diff_Tm", "Diff_Tx"], cmap="bwr", vmin=-5, vmax=5)
-        .format("{:.2f}", subset=["Diff_Tn", "Diff_Tm", "Diff_Tx"])
-    )
-    st.dataframe(df_diff_styled, hide_index=True)
+        ax.set_title(f"{mois} - Histogramme des températures (1 °C)")
+        ax.set_xlabel("Température (°C)")
+        ax.set_ylabel("Nombre d'heures")
+        ax.legend()
+        st.pyplot(fig)
+        plt.close(fig)
+
+    # -------- Histogramme annuel --------
+    st.subheader("Histogramme annuel (tranches de 1 °C)")
+
+    fig, ax = plt.subplots(figsize=(14, 5))
+    for i, key in enumerate(data):
+        model_values = data[key]
+        mod_counts, _ = np.histogram(model_values, bins=bin_edges)
+        ax.bar(bin_labels + i * 0.2, mod_counts, width=0.2, label=f"{key}", color=couleurs[i])
+
+    ax.set_title("Histogramme annuel des températures (1 °C)")
+    ax.set_xlabel("Température (°C)")
+    ax.set_ylabel("Nombre d'heures")
+    ax.legend()
+    st.pyplot(fig)
+    plt.close(fig)
+
+    # -------- Courbes CDF mensuelles --------
+    st.subheader("Courbes CDF mensuelles")
+
+    for mois_num in range(1, 13):
+        mois = mois_noms[mois_num]
+        fig, ax = plt.subplots(figsize=(12, 4))
+
+        for i, key in enumerate(data):
+            model_values = data[key]
+            start_idx = sum(heures_par_mois[:mois_num-1])
+            mod_mois = model_values[start_idx:start_idx + heures_par_mois[mois_num-1]]
+            mod_mois_sorted = np.sort(mod_mois)
+            cdf = np.arange(1, len(mod_mois_sorted) + 1) / len(mod_mois_sorted)
+            ax.plot(mod_mois_sorted, cdf, label=f"{key}", color=couleurs[i])
+
+        ax.set_title(f"{mois} - Courbe CDF")
+        ax.set_xlabel("Température (°C)")
+        ax.set_ylabel("CDF")
+        ax.legend()
+        st.pyplot(fig)
+        plt.close(fig)
+
+    # -------- Courbe CDF annuelle --------
+    st.subheader("Courbe CDF annuelle")
+
+    fig, ax = plt.subplots(figsize=(12, 5))
+    for i, key in enumerate(data):
+        model_values = data[key]
+        model_values_sorted = np.sort(model_values)
+        cdf = np.arange(1, len(model_values_sorted) + 1) / len(model_values_sorted)
+        ax.plot(model_values_sorted, cdf, label=f"{key}", color=couleurs[i])
+
+    ax.set_title("Courbe CDF annuelle")
+    ax.set_xlabel("Température (°C)")
+    ax.set_ylabel("CDF")
+    ax.legend()
+    st.pyplot(fig)
+    plt.close(fig)
