@@ -42,6 +42,20 @@ if len(uploaded_files) >= 2:
         data[key] = pd.read_csv(file).iloc[:, 0].values
         file_names[key] = file.name.replace(".csv", "")
 
+        # -------- Source de référence --------
+    ref_key = "source_1"
+    ref_name = file_names[ref_key]
+
+    st.markdown(
+        f"""
+        <div style="padding:8px; border-left:5px solid #FFD700; background-color: rgba(255,215,0,0.08); margin-bottom:15px;">
+        <b>Référence :</b> {ref_name}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
     n_files = len(data)
     group_width = 0.9
     bar_width = group_width / n_files
