@@ -114,7 +114,7 @@ if len(uploaded_files) >= 2:
         hist_b, _ = np.histogram(b, bins=bins, density=True)
     
         overlap = np.sum(np.minimum(hist_a, hist_b) * bin_width)
-        return round(overlap * 100, 2)
+        return int(round(overlap * 100))
     
     # -------- Calcul précision mensuelle --------
     df_precision_list = []
