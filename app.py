@@ -383,7 +383,7 @@ if len(uploaded_files) >= 2:
 
     # -------- Calcul des vagues de chaleur --------
     st.subheader("Vagues de chaleur")
-
+    
     # Calcul des Tm (température moyenne journalière) pour chaque source
     Tm_jour_all = {key: [] for key in data}
     for mois_num in range(1, 13):
@@ -393,39 +393,40 @@ if len(uploaded_files) >= 2:
             model_hourly = data[key][idx0:idx1]
             mod_tn, mod_tm, mod_tx = daily_stats_from_hourly(model_hourly)
             Tm_jour_all[key].append(mod_tm)
-
+    
     # Concaténation des Tm pour toute l'année
     Tm_all = {key: np.concatenate(Tm_jour_all[key]) for key in data}
-
+    
     # Calcul des jours de vague de chaleur pour chaque source
     jours_vagues = {key: [] for key in data}
     jours_par_mois = [len(Tm_jour_all[key][0]) for key in data][:12]  # Longueur des mois
-
+    
     for key in data:
         _, jours_vague_all = nombre_jours_vague(Tm_all[key])
         idx = 0
         for L in jours_par_mois:
-            jours_vagues[key].append(int(jours_vague_all[idx:idx+L].sum()))
+            jours_vagues[key].append(jours_vague_all[idx:idx+L].sum())
             idx += L
-
+    
     # Création du DataFrame
-    df_vagues = pd.DataFrame(jours_vagues)
+    df_vagues = pd.DataFrame.from_dict(jours_vagues)
     df_vagues["Mois"] = list(mois_noms.values())
-
+    
     # Affichage du tableau
     st.subheader("Nombre de jours de vague de chaleur par mois")
     st.dataframe(df_vagues.set_index("Mois"), use_container_width=True)
-
+    
     # Affichage du graphique
     fig, ax = plt.subplots(figsize=(12, 5))
     x = np.arange(1, 13)
     n_sources = len(data)
     bar_width = 0.8 / n_sources  # Largeur des barres en fonction du nombre de sources
     decalage_initial = -0.4 + 0.1  # Décalage initial pour centrer les barres et laisser un espace de 0.1 de chaque côté
-
+    
     for i, key in enumerate(data):
-        ax.bar(x + decalage_initial + i * bar_width, df_vagues[key], width=bar_width, label=file_names[key], color=couleurs[i])
-
+        ax.bar(x + decalage_initial + i * bar_width, df_vagues.loc[df_vagues["Mois"] == list(mois_noms.values())[i], key].values[0] if i < len(df_vagues) else 0,
+               width=bar_width, label=file_names[key], color=couleurs[i])
+    
     ax.set_xlabel("Mois")
     ax.set_ylabel("Nombre de jours de vague de chaleur")
     ax.set_title("Nombre de jours de vague de chaleur par mois")
@@ -434,6 +435,7 @@ if len(uploaded_files) >= 2:
     ax.legend()
     st.pyplot(fig)
     plt.close(fig)
+
 
     # -------- Jours chauds et nuits tropicales --------
     st.subheader("Jours chauds et nuits tropicales")
