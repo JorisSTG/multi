@@ -166,7 +166,7 @@ if len(uploaded_files) >= 2:
     bin_edges = np.arange(-10, 46, 1)
     bin_labels = bin_edges[:-1].astype(int)
     n_files = len(uploaded_files)
-    bar_width = 0.8 / n_files  # Largeur de chaque barre
+    bar_width = 1.0 / n_files
 
     for mois_num in range(1, 13):
         mois = mois_noms[mois_num]
@@ -177,7 +177,7 @@ if len(uploaded_files) >= 2:
             start_idx = sum(heures_par_mois[:mois_num-1])
             mod_mois = model_values[start_idx:start_idx + heures_par_mois[mois_num-1]]
             mod_counts, _ = np.histogram(mod_mois, bins=bin_edges)
-            ax.bar(bin_labels + i * bar_width - 0.4 + 0.1, mod_counts, width=bar_width, label=f"{file_names[key]}", color=couleurs[i])
+            ax.bar(bin_labels + i * bar_width, mod_counts, width=bar_width, label=f"{file_names[key]}", color=couleurs[i])
 
         ax.set_title(f"{mois} - Histogramme des températures (1 °C)")
         ax.set_xlabel("Température (°C)")
@@ -193,7 +193,7 @@ if len(uploaded_files) >= 2:
     for i, key in enumerate(data):
         model_values = data[key]
         mod_counts, _ = np.histogram(model_values, bins=bin_edges)
-        ax.bar(bin_labels + i * bar_width - 0.4 + 0.1, mod_counts, width=bar_width, label=f"{file_names[key]}", color=couleurs[i])
+        ax.bar(bin_labels + i * bar_width, mod_counts, width=bar_width, label=f"{file_names[key]}", color=couleurs[i])
 
     ax.set_title("Histogramme annuel des températures (1 °C)")
     ax.set_xlabel("Température (°C)")
@@ -364,8 +364,8 @@ if len(uploaded_files) >= 2:
         Tn_counts = count_days_in_bins(Tn_year, bin_edges)
         Tx_counts = count_days_in_bins(Tx_year, bin_edges)
 
-        ax[0].bar(bin_labels + list(data.keys()).index(key) * bar_width - 0.4 + 0.1, Tn_counts, width=bar_width, label=f"{file_names[key]} Tn", color=couleurs[list(data.keys()).index(key)])
-        ax[1].bar(bin_labels + list(data.keys()).index(key) * bar_width - 0.4 + 0.1, Tx_counts, width=bar_width, label=f"{file_names[key]} Tx", color=couleurs[list(data.keys()).index(key)])
+        ax[0].bar(bin_labels + list(data.keys()).index(key) * bar_width, Tn_counts, width=bar_width, label=f"{file_names[key]} Tn", color=couleurs[list(data.keys()).index(key)])
+        ax[1].bar(bin_labels + list(data.keys()).index(key) * bar_width, Tx_counts, width=bar_width, label=f"{file_names[key]} Tx", color=couleurs[list(data.keys()).index(key)])
 
     ax[0].set_title("Histogramme annuel – Nombre de jours par classe de Tn")
     ax[0].set_xlabel("Température (°C)")
@@ -419,11 +419,10 @@ if len(uploaded_files) >= 2:
     fig, ax = plt.subplots(figsize=(12, 5))
     x = np.arange(1, 13)
     n_sources = len(data)
-    bar_width = 0.8 / n_sources  # Largeur des barres en fonction du nombre de sources
-    decalage_initial = -0.4 + 0.1  # Décalage initial pour centrer les barres et laisser un espace de 0.1 de chaque côté
+    bar_width = 1.0 / n_sources  # Largeur des barres en fonction du nombre de sources
 
     for i, key in enumerate(data):
-        ax.bar(x + decalage_initial + i * bar_width, df_vagues[key], width=bar_width, label=file_names[key], color=couleurs[i])
+        ax.bar(x + i * bar_width, df_vagues[key], width=bar_width, label=file_names[key], color=couleurs[i])
 
     ax.set_xlabel("Mois")
     ax.set_ylabel("Nombre de jours de vague de chaleur")
@@ -463,11 +462,11 @@ if len(uploaded_files) >= 2:
     fig, ax = plt.subplots(2, 1, figsize=(14, 8))
 
     x = np.arange(1, 13)
-    width = 0.8 / len(data)
+    width = 1.0 / len(data)
 
     for i, key in enumerate(data):
-        ax[0].bar(x + decalage_initial + i * width, df_jours_chauds[key], width=width, label=file_names[key], color=couleurs[i])
-        ax[1].bar(x + decalage_initial + i * width, df_nuits_trop[key], width=width, label=file_names[key], color=couleurs[i])
+        ax[0].bar(x + i * width, df_jours_chauds[key], width=width, label=file_names[key], color=couleurs[i])
+        ax[1].bar(x + i * width, df_nuits_trop[key], width=width, label=file_names[key], color=couleurs[i])
 
     ax[0].set_xticks(x)
     ax[0].set_xticklabels(list(mois_noms.values()), rotation=45)
@@ -530,11 +529,11 @@ if len(uploaded_files) >= 2:
     fig, ax = plt.subplots(2, 1, figsize=(14, 8))
 
     x = np.arange(1, 13)
-    width = 0.8 / len(data)
+    width = 1.0 / len(data)
 
     for i, key in enumerate(data):
-        ax[0].bar(x + decalage_initial + i * width, df_DJC[key], width=width, label=file_names[key], color=couleurs[i])
-        ax[1].bar(x + decalage_initial + i * width, df_DJF[key], width=width, label=file_names[key], color=couleurs[i])
+        ax[0].bar(x + i * width, df_DJC[key], width=width, label=file_names[key], color=couleurs[i])
+        ax[1].bar(x + i * width, df_DJF[key], width=width, label=file_names[key], color=couleurs[i])
 
     ax[0].set_xticks(x)
     ax[0].set_xticklabels(list(mois_noms.values()), rotation=45)
