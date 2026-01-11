@@ -43,7 +43,7 @@ if len(uploaded_files) >= 2:
         file_names[key] = file.name.replace(".csv", "")
 
     n_files = len(data)
-    group_width = 1 - 0.2
+    group_width = 0.9
     bar_width = group_width / n_files
     offsets = (np.arange(n_files) - (n_files-1)/2) * bar_width
 
@@ -300,7 +300,6 @@ if len(uploaded_files) >= 2:
     st.pyplot(fig)
     plt.close(fig)
 
-    group_width = 0.8
     n_files = len(data)
     bar_width = group_width / n_files
     offsets = (np.arange(n_files) - (n_files-1)/2) * bar_width
