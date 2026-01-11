@@ -70,6 +70,23 @@ if len(uploaded_files) >= 2:
             Tm_jour_all[k].append(tm)
             Tx_jour_all[k].append(tx)
 
+     # -------- DataFrame consolidé pour les RMSE/Précision --------
+    df_results = pd.DataFrame()
+    for key in results_all:
+        df_source = pd.DataFrame(results_all[key])
+        df_source["Source"] = key
+        df_results = pd.concat([df_results, df_source], ignore_index=True)
+
+    # -------- Affichage du tableau des RMSE/Précision --------
+    st.subheader("Précision par mois pour toutes les sources (par rapport à la source 1)")
+    df_results_styled = (
+        df_results.style
+        .background_gradient(subset=["Précision (%)"], cmap="RdYlGn", vmin=50, vmax=100, axis=None)
+        .format({"Précision (%)": "{:.2f}", "RMSE (°C)": "{:.2f}"})
+    )
+    st.dataframe(df_results_styled, hide_index=True)
+
+
     # =========================================================
     # ================== HISTOGRAMMES ========================
     # =========================================================
