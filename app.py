@@ -153,6 +153,8 @@ if len(uploaded_files) >= 2:
 
     bin_edges = np.arange(-10, 46, 1)
     bin_labels = bin_edges[:-1].astype(int)
+    n_files = len(uploaded_files)
+    bar_width = 1.0 / n_files  # Largeur de chaque barre en fonction du nombre de fichiers
 
     for mois_num in range(1, 13):
         mois = mois_noms[mois_num]
@@ -163,7 +165,7 @@ if len(uploaded_files) >= 2:
             start_idx = sum(heures_par_mois[:mois_num-1])
             mod_mois = model_values[start_idx:start_idx + heures_par_mois[mois_num-1]]
             mod_counts, _ = np.histogram(mod_mois, bins=bin_edges)
-            ax.bar(bin_labels + i * 0.2, mod_counts, width=0.2, label=f"{file_names[key]}", color=couleurs[i])
+            ax.bar(bin_labels + i * bar_width, mod_counts, width=bar_width, label=f"{file_names[key]}", color=couleurs[i])
 
         ax.set_title(f"{mois} - Histogramme des températures (1 °C)")
         ax.set_xlabel("Température (°C)")
@@ -179,7 +181,7 @@ if len(uploaded_files) >= 2:
     for i, key in enumerate(data):
         model_values = data[key]
         mod_counts, _ = np.histogram(model_values, bins=bin_edges)
-        ax.bar(bin_labels + i * 0.2, mod_counts, width=0.2, label=f"{file_names[key]}", color=couleurs[i])
+        ax.bar(bin_labels + i * bar_width, mod_counts, width=bar_width, label=f"{file_names[key]}", color=couleurs[i])
 
     ax.set_title("Histogramme annuel des températures (1 °C)")
     ax.set_xlabel("Température (°C)")
@@ -226,3 +228,4 @@ if len(uploaded_files) >= 2:
     ax.legend()
     st.pyplot(fig)
     plt.close(fig)
+
