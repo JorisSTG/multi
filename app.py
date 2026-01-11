@@ -27,7 +27,7 @@ st.markdown(
 # -------- Paramètres --------
 heures_par_mois = [744, 672, 744, 720, 744, 720, 744, 744, 720, 744, 720, 744]
 percentiles_list = [10, 25, 50, 75, 90]
-couleurs = ["goldenrod", "lightgray", "lightblue", "lightgreen", "salmon", "cyan", "magenta", "orange"]
+couleurs = ["goldenrod", "lightgray", "navy", "green", "darkmagenta", "peru", "silver", "orange"]
 
 # -------- Noms des mois --------
 mois_noms = {
