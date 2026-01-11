@@ -18,7 +18,7 @@ plt.rcParams.update({
 
 st.title("Comparaison multisource")
 st.markdown(
-    "L’objectif de cette application est d’évaluer la précision et la cohérence entre **N jeux de données** (température uniquement).",
+    "L’objectif de cette application est d’évaluer la précision et la cohérence entre **N jeux de données** (température uniquement). Le maximum du nombre de jeux de données est de 8.",
     unsafe_allow_html=True
 )
 
