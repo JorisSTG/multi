@@ -147,14 +147,12 @@ if len(uploaded_files) >= 2:
 
             for mois_num, nb_heures in enumerate(heures_par_mois, start=1):
                 mois = mois_noms[mois_num]
-                mod_mois = model_values[start_idx_model:start_idx_model + nb_heures]
+                mod_mois = data[k][start_idx_model:start_idx_model + nb_heures]
                 obs_mois_vals = df_obs[df_obs["month_num"] == mois_num]["T2m"].values
                 obs_mois_all.append(obs_mois_vals)
-                val_rmse = rmse(mod_mois, obs_mois_vals)
                 pct_precision = precision_overlap(mod_mois, obs_mois_vals)
                 results_rmse.append({
                     "Mois": mois,
-                    "RMSE (°C)": round(val_rmse, 2),
                     "Précision percentile (%)": pct_precision
                 })
                 start_idx_model += nb_heures
