@@ -476,7 +476,7 @@ if len(uploaded_files) >= 2:
     
     for key in data:
         name = file_names[key]
-        st.write(f"{name} — DJC annuel : {total_DJC[name]:.0f}, DJF annuel : {total_DJF[name]:.0f}")
+        st.write(f"{name} — DJC annuel : {total_DJC[name]:.0f}  /  DJF annuel : {total_DJF[name]:.0f}")
 
     
 
