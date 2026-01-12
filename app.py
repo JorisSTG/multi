@@ -149,7 +149,6 @@ if len(uploaded_files) >= 2:
                 mois = mois_noms[mois_num]
                 mod_mois = data[k][start_idx_model:start_idx_model + nb_heures]
                 obs_mois_vals = data[0][start_idx_model:start_idx_model + nb_heures]
-                obs_mois_all.append(obs_mois_vals)
                 pct_precision = precision_overlap(mod_mois, obs_mois_vals)
                 results_rmse.append({
                     "Mois": mois,
