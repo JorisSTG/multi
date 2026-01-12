@@ -440,13 +440,18 @@ if len(uploaded_files) >= 2:
             results_djf[key].append(float(np.nansum(DJF_jours)))
     
     df_DJC = pd.DataFrame(results_djc)
+    df_DJC = df_DJC.rename(columns=file_names)
     df_DJC["Mois"] = list(mois_noms.values())
+    
     df_DJF = pd.DataFrame(results_djf)
+    df_DJF = df_DJF.rename(columns=file_names)
     df_DJF["Mois"] = list(mois_noms.values())
+    
     st.dataframe(df_DJC.set_index("Mois"), use_container_width=True)
     st.dataframe(df_DJF.set_index("Mois"), use_container_width=True)
-    
+
     fig, ax = plt.subplots(2,1, figsize=(14,8))
+    fig.subplots_adjust(hspace=0.5)
     for i, key in enumerate(data):
         ax[0].bar(x + offsets[i], df_DJC[key], width=bar_width, label=file_names[key], color=couleurs[i])
         ax[1].bar(x + offsets[i], df_DJF[key], width=bar_width, label=file_names[key], color=couleurs[i])
