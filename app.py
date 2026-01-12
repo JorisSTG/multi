@@ -303,61 +303,41 @@ if len(uploaded_files) >= 2:
     st.pyplot(fig)
     plt.close(fig)
 
-    st.subheader("Courbe Quantile-Quantile (Q-Q) par rapport à la référence")
-    ref_key = "source_1"
-    ref_name = file_names[ref_key]
-    
+    st.subheader(f"Q-Q annuel sur percentiles — par rapport à {ref_name}")
+
     fig, ax = plt.subplots(figsize=(8,8))
     
-    # Récupérer toutes les données annuelles pour la référence
-    Tx_ref = np.concatenate(Tx_jour_all[ref_key])
-    Tn_ref = np.concatenate(Tn_jour_all[ref_key])
-    Tm_ref = (Tx_ref + Tn_ref)/2
+    # Couleurs pour chaque source
+    couleurs = ["lightgray", "navy", "green", "darkmagenta", "peru", "silver", "orange"]
     
-    # Pour chaque autre source
+    ref_key = "source_1"
+    
+    # Données annuelles complètes pour la référence
+    ref_all = np.array(data[ref_key])  # tous les pas de temps
+    ref_percentiles = np.percentile(ref_all, np.arange(1,101))  # P1 à P100
+    
+    # Boucle sur toutes les sources autres que la référence
     for i, key in enumerate(data):
         if key == ref_key:
-            continue  # pas de comparaison avec soi-même
+            continue
+        mod_all = np.array(data[key])
+        mod_percentiles = np.percentile(mod_all, np.arange(1,101))
     
-        # données annuelles
-        Tx_mod = np.concatenate(Tx_jour_all[key])
-        Tn_mod = np.concatenate(Tn_jour_all[key])
-        Tm_mod = (Tx_mod + Tn_mod)/2
+        ax.scatter(ref_percentiles, mod_percentiles, marker='x', s=50, color=couleurs[i], label=file_names[key])
     
-        # fonction quantiles
-        def qq(x, y):
-            x_sorted = np.sort(x)
-            y_sorted = np.sort(y)
-            # si les longueurs diffèrent, on interpole y pour correspondre à x
-            y_interp = np.interp(np.linspace(0, 1, len(x_sorted)), np.linspace(0, 1, len(y_sorted)), y_sorted)
-            return x_sorted, y_interp
-    
-        # Tx
-        qx, qy = qq(Tx_ref, Tx_mod)
-        ax.plot(qx, qy, label=f"{file_names[key]} Tx", linestyle="-", color=couleurs[i])
-    
-        # Tn
-        qx, qy = qq(Tn_ref, Tn_mod)
-        ax.plot(qx, qy, label=f"{file_names[key]} Tn", linestyle="--", color=couleurs[i])
-    
-        # Tm
-        qx, qy = qq(Tm_ref, Tm_mod)
-        ax.plot(qx, qy, label=f"{file_names[key]} Tm", linestyle=":", color=couleurs[i])
-    
-    # ligne y=x pour référence parfaite
-    min_val = min(Tx_ref.min(), Tn_ref.min(), Tm_ref.min())
-    max_val = max(Tx_ref.max(), Tn_ref.max(), Tm_ref.max())
+    # Ligne 1:1 pour accord parfait
+    min_val = min(ref_percentiles.min(), min(np.percentile(np.array(data[k]), np.arange(1,101)) for k in data if k!=ref_key))
+    max_val = max(ref_percentiles.max(), max(np.percentile(np.array(data[k]), np.arange(1,101)) for k in data if k!=ref_key))
     ax.plot([min_val, max_val], [min_val, max_val], 'k--', label="1:1")
     
-    ax.set_title(f"Courbe Q-Q annuelle par rapport à {ref_name}")
     ax.set_xlabel(f"Quantiles référence ({ref_name})")
     ax.set_ylabel("Quantiles source")
+    ax.set_title("Q-Q annuel sur percentiles (P1-P100)")
     ax.legend(fontsize=8)
     ax.grid(True, linestyle=':', alpha=0.5)
     
     st.pyplot(fig)
     plt.close(fig)
-
 
     # =========================================================
     # ====================== CDF ==============================
