@@ -453,8 +453,9 @@ if len(uploaded_files) >= 2:
     fig, ax = plt.subplots(2,1, figsize=(14,8))
     fig.subplots_adjust(hspace=0.5)
     for i, key in enumerate(data):
-        ax[0].bar(x + offsets[i], df_DJC[key], width=bar_width, label=file_names[key], color=couleurs[i])
-        ax[1].bar(x + offsets[i], df_DJF[key], width=bar_width, label=file_names[key], color=couleurs[i])
+        col = file_names[key]
+        ax[0].bar(x + offsets[i], df_DJC[col], width=bar_width, label=col, color=couleurs[i])
+        ax[1].bar(x + offsets[i], df_DJF[col], width=bar_width, label=col, color=couleurs[i])
     for a in ax:
         a.set_xticks(x)
         a.set_xticklabels(list(mois_noms.values()), rotation=45)
