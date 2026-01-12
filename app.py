@@ -142,8 +142,8 @@ if len(uploaded_files) >= 2:
         for k in data:
             if k == ref_key:
                 continue
-                obs_mois_all = []
-                start_idx_model = 0
+            obs_mois_all = []
+            start_idx_model = 0
 
             for mois_num, nb_heures in enumerate(heures_par_mois, start=1):
                 mois = mois_noms[mois_num]
