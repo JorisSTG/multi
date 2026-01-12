@@ -178,7 +178,7 @@ if len(uploaded_files) >= 2:
         .sort_values("Mois")
         .pivot(index="Mois", columns="Source", values="Précision (%)")
         .style.background_gradient(cmap="RdYlGn", vmin=vminP, vmax=vmaxP, axis=None)
-        .format("{:.1f}")
+        .format("{:.0f}")
     )
     
     st.subheader(f"Précision mensuelle par recouvrement (%) par rapport à {ref_name}")
