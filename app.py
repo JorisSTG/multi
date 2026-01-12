@@ -316,7 +316,7 @@ if len(uploaded_files) >= 2:
             continue
         mod_all = np.array(data[key])
         mod_percentiles = np.percentile(mod_all, np.arange(1,101))
-        ax.scatter(ref_percentiles, mod_percentiles, marker='x', s=50, color=couleurs_quantile[i], label=file_names[key])
+        ax.scatter(ref_percentiles, mod_percentiles, marker='x', s=50, color=couleurs_quantile[i-1], label=file_names[key])
     
     # Ligne x=y
     all_values = [np.array(data[k]) for k in data if k != ref_key]
