@@ -357,44 +357,39 @@ if len(uploaded_files) >= 2:
     offsets = (np.arange(n_files) - (n_files-1)/2) * bar_width
     x = np.arange(12)
 
-   st.subheader("CDF par mois : Tx, Tn et Tm")
-
-# Couleurs et labels
-couleurs = ["goldenrod", "lightgray", "navy", "green", "darkmagenta", "peru", "silver", "orange"]
-
-for mois_idx in range(12):
-    mois = mois_noms[mois_idx + 1]
-    
-    fig, ax = plt.subplots(figsize=(10,6))
-    
-    for i, key in enumerate(data):
-        # Tx
-        tx = Tx_jour_all[key][mois_idx]
-        tx_sorted = np.sort(tx)
-        tx_cdf = np.arange(1, len(tx_sorted)+1)/len(tx_sorted)
-        ax.plot(tx_sorted, tx_cdf, label=f"{file_names[key]} Tx", color=couleurs[i], linestyle="-")
+    st.subheader("CDF par mois : Tx, Tn et Tm")
+    for mois_idx in range(12):
+        mois = mois_noms[mois_idx + 1]
         
-        # Tn
-        tn = Tn_jour_all[key][mois_idx]
-        tn_sorted = np.sort(tn)
-        tn_cdf = np.arange(1, len(tn_sorted)+1)/len(tn_sorted)
-        ax.plot(tn_sorted, tn_cdf, label=f"{file_names[key]} Tn", color=couleurs[i], linestyle="--")
+        fig, ax = plt.subplots(figsize=(10,6))
         
-        # Tm = (Tx+Tn)/2
-        tm = (tx + tn)/2
-        tm_sorted = np.sort(tm)
-        tm_cdf = np.arange(1, len(tm_sorted)+1)/len(tm_sorted)
-        ax.plot(tm_sorted, tm_cdf, label=f"{file_names[key]} Tm", color=couleurs[i], linestyle=":")
-    
-    ax.set_title(f"CDF mensuelles — {mois}")
-    ax.set_xlabel("Température (°C)")
-    ax.set_ylabel("CDF")
-    ax.legend(loc="lower right", fontsize=8)
-    ax.grid(True, linestyle=':', alpha=0.5)
-    
-    st.pyplot(fig)
-    plt.close(fig)
-
+        for i, key in enumerate(data):
+            # Tx
+            tx = Tx_jour_all[key][mois_idx]
+            tx_sorted = np.sort(tx)
+            tx_cdf = np.arange(1, len(tx_sorted)+1)/len(tx_sorted)
+            ax.plot(tx_sorted, tx_cdf, label=f"{file_names[key]} Tx", color=couleurs[i], linestyle="-")
+            
+            # Tn
+            tn = Tn_jour_all[key][mois_idx]
+            tn_sorted = np.sort(tn)
+            tn_cdf = np.arange(1, len(tn_sorted)+1)/len(tn_sorted)
+            ax.plot(tn_sorted, tn_cdf, label=f"{file_names[key]} Tn", color=couleurs[i], linestyle="--")
+            
+            # Tm = (Tx+Tn)/2
+            tm = (tx + tn)/2
+            tm_sorted = np.sort(tm)
+            tm_cdf = np.arange(1, len(tm_sorted)+1)/len(tm_sorted)
+            ax.plot(tm_sorted, tm_cdf, label=f"{file_names[key]} Tm", color=couleurs[i], linestyle=":")
+        
+        ax.set_title(f"CDF mensuelles — {mois}")
+        ax.set_xlabel("Température (°C)")
+        ax.set_ylabel("CDF")
+        ax.legend(loc="lower right", fontsize=8)
+        ax.grid(True, linestyle=':', alpha=0.5)
+        
+        st.pyplot(fig)
+        plt.close(fig)
 
     # -------- Vagues de chaleur --------
     st.subheader("Vagues de chaleur")
