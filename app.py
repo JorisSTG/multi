@@ -133,28 +133,20 @@ if len(uploaded_files) >= 2:
     # -------- Calcul précision mensuelle --------
     df_precision_list = []
     
-    ref_key = "source_1"
-    
-    for mois_num in range(12):
-        mois = mois_noms[mois_num+1]
-        ref = Tm_jour_all[ref_key][mois_num]  # Tm journalière source 1
-    
-        for k in data:
-            if k == ref_key:
-                continue
-            obs_mois_all = []
-            start_idx_model = 0
+    for k in data:
+        obs_mois_all = []
+        start_idx_model = 0
 
-            for mois_num, nb_heures in enumerate(heures_par_mois, start=1):
-                mois = mois_noms[mois_num]
-                mod_mois = data[k][start_idx_model:start_idx_model + nb_heures]
-                obs_mois_vals = data[0][start_idx_model:start_idx_model + nb_heures]
-                pct_precision = precision_overlap(mod_mois, obs_mois_vals)
-                results_rmse.append({
-                    "Mois": mois,
-                    "Précision percentile (%)": pct_precision
-                })
-                start_idx_model += nb_heures
+        for mois_num, nb_heures in enumerate(heures_par_mois, start=1):
+            mois = mois_noms[mois_num]
+            mod_mois = data[k][start_idx_model:start_idx_model + nb_heures]
+            obs_mois_vals = data[0][start_idx_model:start_idx_model + nb_heures]
+            pct_precision = precision_overlap(mod_mois, obs_mois_vals)
+            results_rmse.append({
+                "Mois": mois,
+                "Précision percentile (%)": pct_precision
+            })
+            start_idx_model += nb_heures
             
     df_precision = pd.DataFrame(df_precision_list)
     
