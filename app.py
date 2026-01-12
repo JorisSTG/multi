@@ -356,7 +356,57 @@ if len(uploaded_files) >= 2:
     bar_width = group_width / n_files
     offsets = (np.arange(n_files) - (n_files-1)/2) * bar_width
     x = np.arange(12)
+
+    st.subheader("CDF mensuelles : Tx, Tn et Tm")
+    # On utilise les DataFrames ou listes journalières déjà calculées
+    # Tx_jour_all, Tn_jour_all, Tm_jour_all = dictionnaires {source_key: [mois1, mois2, ...]}
     
+    fig, ax = plt.subplots(3, 1, figsize=(12, 12))
+    fig.subplots_adjust(hspace=0.35)
+    
+    # Couleurs par source
+    couleurs = ["goldenrod", "lightgray", "navy", "green", "darkmagenta", "peru", "silver", "orange"]
+    
+    for mois_idx in range(12):
+        mois = mois_noms[mois_idx+1]
+    
+        # Pour chaque source, on récupère les données du mois
+        for i, key in enumerate(data):
+            # Tx
+            tx = Tx_jour_all[key][mois_idx]
+            tx_sorted = np.sort(tx)
+            tx_cdf = np.arange(1, len(tx_sorted)+1)/len(tx_sorted)
+            ax[0].plot(tx_sorted, tx_cdf, label=f"{file_names[key]}" if mois_idx==0 else "", color=couleurs[i])
+    
+            # Tn
+            tn = Tn_jour_all[key][mois_idx]
+            tn_sorted = np.sort(tn)
+            tn_cdf = np.arange(1, len(tn_sorted)+1)/len(tn_sorted)
+            ax[1].plot(tn_sorted, tn_cdf, label=f"{file_names[key]}" if mois_idx==0 else "", color=couleurs[i])
+    
+            # Tm = (Tx + Tn)/2
+            tm = (tx + tn)/2
+            tm_sorted = np.sort(tm)
+            tm_cdf = np.arange(1, len(tm_sorted)+1)/len(tm_sorted)
+            ax[2].plot(tm_sorted, tm_cdf, label=f"{file_names[key]}" if mois_idx==0 else "", color=couleurs[i])
+    
+    # Titres et axes
+    ax[0].set_title("CDF Tx journalières")
+    ax[0].set_xlabel("Température (°C)")
+    ax[0].set_ylabel("CDF")
+    ax[0].legend(loc="lower right")
+    
+    ax[1].set_title("CDF Tn journalières")
+    ax[1].set_xlabel("Température (°C)")
+    ax[1].set_ylabel("CDF")
+    
+    ax[2].set_title("CDF Tm journalières (moyenne Tx/Tn)")
+    ax[2].set_xlabel("Température (°C)")
+    ax[2].set_ylabel("CDF")
+    
+    st.pyplot(fig)
+    plt.close(fig)
+
     # -------- Vagues de chaleur --------
     st.subheader("Vagues de chaleur")
     Tm_all = {key: np.concatenate(Tm_jour_all[key]) if len(Tm_jour_all[key])>0 else np.array([]) for key in data}
