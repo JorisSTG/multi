@@ -391,6 +391,36 @@ if len(uploaded_files) >= 2:
         st.pyplot(fig)
         plt.close(fig)
 
+    st.subheader("CDF annuelle : Tx, Tn et Tm")
+    fig, ax = plt.subplots(figsize=(10,6))
+    for i, key in enumerate(data):
+        # Tx annuel
+        tx_annuel = np.concatenate(Tx_jour_all[key])
+        tx_sorted = np.sort(tx_annuel)
+        tx_cdf = np.arange(1, len(tx_sorted)+1)/len(tx_sorted)
+        ax.plot(tx_sorted, tx_cdf, label=f"{file_names[key]} Tx", color=couleurs[i], linestyle="-")
+        
+        # Tn annuel
+        tn_annuel = np.concatenate(Tn_jour_all[key])
+        tn_sorted = np.sort(tn_annuel)
+        tn_cdf = np.arange(1, len(tn_sorted)+1)/len(tn_sorted)
+        ax.plot(tn_sorted, tn_cdf, label=f"{file_names[key]} Tn", color=couleurs[i], linestyle="--")
+        
+        # Tm annuel = moyenne Tx/Tn
+        tm_annuel = (tx_annuel + tn_annuel)/2
+        tm_sorted = np.sort(tm_annuel)
+        tm_cdf = np.arange(1, len(tm_sorted)+1)/len(tm_sorted)
+        ax.plot(tm_sorted, tm_cdf, label=f"{file_names[key]} Tm", color=couleurs[i], linestyle=":")
+    
+    ax.set_title("CDF annuelle — Tx, Tn et Tm")
+    ax.set_xlabel("Température (°C)")
+    ax.set_ylabel("CDF")
+    ax.legend(loc="lower right", fontsize=8)
+    ax.grid(True, linestyle=':', alpha=0.5)
+    
+    st.pyplot(fig)
+    plt.close(fig)
+
     # -------- Vagues de chaleur --------
     st.subheader("Vagues de chaleur")
     Tm_all = {key: np.concatenate(Tm_jour_all[key]) if len(Tm_jour_all[key])>0 else np.array([]) for key in data}
