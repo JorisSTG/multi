@@ -417,6 +417,7 @@ if len(uploaded_files) >= 2:
         a.set_xticklabels(list(mois_noms.values()), rotation=45)
     ax[0].set_ylabel(f"Nombre de jours Tx_jour > {tx_seuil}°C")
     ax[0].set_title("Jours chauds par mois")
+    ax[0].set_title("")
     ax[0].legend()
     ax[1].set_ylabel(f"Nombre de nuits Tn_jour > {tn_seuil}°C")
     ax[1].set_title("Nuits tropicales par mois")
