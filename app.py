@@ -304,30 +304,26 @@ if len(uploaded_files) >= 2:
     plt.close(fig)
 
     st.subheader(f"Q-Q annuel sur percentiles — par rapport à {ref_name}")
-
+    
     fig, ax = plt.subplots(figsize=(8,8))
     
-    # Couleurs pour chaque source
     couleurs = ["lightgray", "navy", "green", "darkmagenta", "peru", "silver", "orange"]
     
     ref_key = "source_1"
+    ref_all = np.array(data[ref_key])
+    ref_percentiles = np.percentile(ref_all, np.arange(1,101))
     
-    # Données annuelles complètes pour la référence
-    ref_all = np.array(data[ref_key])  # tous les pas de temps
-    ref_percentiles = np.percentile(ref_all, np.arange(1,101))  # P1 à P100
-    
-    # Boucle sur toutes les sources autres que la référence
     for i, key in enumerate(data):
         if key == ref_key:
             continue
         mod_all = np.array(data[key])
         mod_percentiles = np.percentile(mod_all, np.arange(1,101))
-    
         ax.scatter(ref_percentiles, mod_percentiles, marker='x', s=50, color=couleurs[i], label=file_names[key])
     
-    # Ligne 1:1 pour accord parfait
-    min_val = min(ref_percentiles.min(), min(np.percentile(np.array(data[k]), np.arange(1,101)) for k in data if k!=ref_key))
-    max_val = max(ref_percentiles.max(), max(np.percentile(np.array(data[k]), np.arange(1,101)) for k in data if k!=ref_key))
+    # Ligne x=y
+    all_values = [np.array(data[k]) for k in data if k != ref_key]
+    min_val = min(ref_percentiles.min(), *(v.min() for v in all_values))
+    max_val = max(ref_percentiles.max(), *(v.max() for v in all_values))
     ax.plot([min_val, max_val], [min_val, max_val], 'k--', label="1:1")
     
     ax.set_xlabel(f"Quantiles référence ({ref_name})")
@@ -338,6 +334,7 @@ if len(uploaded_files) >= 2:
     
     st.pyplot(fig)
     plt.close(fig)
+
 
     # =========================================================
     # ====================== CDF ==============================
