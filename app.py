@@ -306,9 +306,7 @@ if len(uploaded_files) >= 2:
     st.subheader(f"Q-Q annuel sur percentiles — par rapport à {ref_name}")
     
     fig, ax = plt.subplots(figsize=(8,8))
-    
-    couleurs = ["lightgray", "navy", "green", "darkmagenta", "peru", "silver", "orange"]
-    
+    couleurs_quantile = ["lightgray", "navy", "green", "darkmagenta", "peru", "silver", "orange"]
     ref_key = "source_1"
     ref_all = np.array(data[ref_key])
     ref_percentiles = np.percentile(ref_all, np.arange(1,101))
@@ -318,7 +316,7 @@ if len(uploaded_files) >= 2:
             continue
         mod_all = np.array(data[key])
         mod_percentiles = np.percentile(mod_all, np.arange(1,101))
-        ax.scatter(ref_percentiles, mod_percentiles, marker='x', s=50, color=couleurs[i], label=file_names[key])
+        ax.scatter(ref_percentiles, mod_percentiles, marker='x', s=50, color=couleurs_quantile[i], label=file_names[key])
     
     # Ligne x=y
     all_values = [np.array(data[k]) for k in data if k != ref_key]
