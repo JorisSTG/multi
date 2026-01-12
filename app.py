@@ -409,6 +409,7 @@ if len(uploaded_files) >= 2:
     st.dataframe(df_nuits_trop.set_index("Mois"), use_container_width=True)
     
     fig, ax = plt.subplots(2,1, figsize=(14,8))
+    fig.subplots_adjust(hspace=0.5)
     for i, key in enumerate(data):
         ax[0].bar(x + offsets[i], df_jours_chauds[key], width=bar_width, label=file_names[key], color=couleurs[i])
         ax[1].bar(x + offsets[i], df_nuits_trop[key], width=bar_width, label=file_names[key], color=couleurs[i])
@@ -417,7 +418,6 @@ if len(uploaded_files) >= 2:
         a.set_xticklabels(list(mois_noms.values()), rotation=45)
     ax[0].set_ylabel(f"Nombre de jours Tx_jour > {tx_seuil}°C")
     ax[0].set_title("Jours chauds par mois")
-    ax[0].set_title("")
     ax[0].legend()
     ax[1].set_ylabel(f"Nombre de nuits Tn_jour > {tn_seuil}°C")
     ax[1].set_title("Nuits tropicales par mois")
