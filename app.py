@@ -160,14 +160,27 @@ if len(uploaded_files) >= 2:
 
     df_precision = pd.DataFrame(df_precision_list)
 
+    # -------- Ordre des mois --------
+    ordre_mois = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+                  "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
+    
+    df_precision["Mois"] = pd.Categorical(
+        df_precision["Mois"],
+        categories=ordre_mois,
+        ordered=True
+    )
+    
+    # -------- Style avec couleurs --------
     vminP, vmaxP = 50, 100
+    
     df_precision_styled = (
         df_precision
+        .sort_values("Mois")
         .pivot(index="Mois", columns="Source", values="Précision (%)")
         .style.background_gradient(cmap="RdYlGn", vmin=vminP, vmax=vmaxP, axis=None)
         .format("{:.1f}")
     )
-
+    
     st.subheader(f"Précision mensuelle par recouvrement (%) par rapport à {ref_name}")
     st.dataframe(df_precision_styled, use_container_width=True)
 
