@@ -168,7 +168,7 @@ if len(uploaded_files) >= 2:
         .format("{:.1f}")
     )
 
-    st.subheader("Précision mensuelle par recouvrement (%) par rapport à la source 1")
+    st.subheader(f"Précision mensuelle par recouvrement (%) par rapport à {ref_name}")
     st.dataframe(df_precision_styled, use_container_width=True)
 
     # -------- Seuils supérieurs et inférieurs --------
