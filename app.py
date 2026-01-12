@@ -130,34 +130,44 @@ if len(uploaded_files) >= 2:
         overlap = np.sum(np.minimum(hist_a, hist_b) * bin_width)
         return int(round(overlap * 100))
     
-    # -------- Calcul précision mensuelle --------
+        # =========================================================
+    # ================== BLOC PRÉCISION ======================
+    # =========================================================
+
     df_precision_list = []
-    
+
     for k in data:
-        obs_mois_all = []
-        start_idx_model = 0
+        if k == ref_key:
+            continue  # pas de précision de la référence avec elle-même
+
+        start_idx = 0
 
         for mois_num, nb_heures in enumerate(heures_par_mois, start=1):
             mois = mois_noms[mois_num]
-            mod_mois = data[k][start_idx_model:start_idx_model + nb_heures]
-            obs_mois_vals = data[0][start_idx_model:start_idx_model + nb_heures]   # A changer l'indice pour avoir en référence la premiere liste qui est rentré (la référence)
-            pct_precision = precision_overlap(mod_mois, obs_mois_vals)
-            results_rmse.append({
+
+            mod_mois = data[k][start_idx:start_idx + nb_heures]
+            ref_mois = data[ref_key][start_idx:start_idx + nb_heures]
+
+            pct_precision = precision_overlap(mod_mois, ref_mois)
+
+            df_precision_list.append({
                 "Mois": mois,
-                "Précision percentile (%)": pct_precision
+                "Source": file_names[k],
+                "Précision (%)": pct_precision
             })
-            start_idx_model += nb_heures
-            
+
+            start_idx += nb_heures
+
     df_precision = pd.DataFrame(df_precision_list)
-    
-    # -------- Style avec couleurs --------
-    vminP = 50  # min pour gradient
-    vmaxP = 100 # max pour gradient
+
+    vminP, vmaxP = 50, 100
     df_precision_styled = (
-        df_precision.pivot(index="Mois", columns="Source", values="Précision (%)")
+        df_precision
+        .pivot(index="Mois", columns="Source", values="Précision (%)")
         .style.background_gradient(cmap="RdYlGn", vmin=vminP, vmax=vmaxP, axis=None)
+        .format("{:.1f}")
     )
-    
+
     st.subheader("Précision mensuelle par recouvrement (%) par rapport à la source 1")
     st.dataframe(df_precision_styled, use_container_width=True)
 
