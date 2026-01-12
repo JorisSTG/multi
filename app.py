@@ -470,11 +470,14 @@ if len(uploaded_files) >= 2:
     
     # -------- Sommes annuelles --------
     st.subheader("Sommes annuelles")
-    total_DJC = {k: df_DJC[k].sum() for k in data}
-    total_DJF = {k: df_DJF[k].sum() for k in data}
-    for key in data:
-        st.write(f"{file_names[key]} — DJC annuel : {total_DJC[key]:.0f}, DJF annuel : {total_DJF[key]:.0f}")
     
+    total_DJC = {file_names[k]: df_DJC[file_names[k]].sum() for k in data}
+    total_DJF = {file_names[k]: df_DJF[file_names[k]].sum() for k in data}
+    
+    for key in data:
+        name = file_names[key]
+        st.write(f"{name} — DJC annuel : {total_DJC[name]:.0f}, DJF annuel : {total_DJF[name]:.0f}")
+
     
 
 
