@@ -322,7 +322,7 @@ if len(uploaded_files) >= 2:
     all_values = [np.array(data[k]) for k in data if k != ref_key]
     min_val = min(ref_percentiles.min(), *(v.min() for v in all_values))
     max_val = max(ref_percentiles.max(), *(v.max() for v in all_values))
-    ax.plot([min_val, max_val], [min_val, max_val], 'k--', color="white", label="1:1")
+    ax.plot([min_val, max_val], [min_val, max_val], 'k--', color="goldenrod", label="1:1")
     
     ax.set_xlabel(f"Quantiles référence ({ref_name})")
     ax.set_ylabel("Quantiles source")
