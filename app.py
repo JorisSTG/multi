@@ -24,7 +24,7 @@ st.markdown(
 
 # -------- Paramètres --------
 heures_par_mois = [744, 672, 744, 720, 744, 720, 744, 744, 720, 744, 720, 744]
-couleurs = ["goldenrod", "lightgray", "navy", "green", "darkmagenta", "peru", "silver", "orange"]
+couleurs = ["goldenrod", "lightgray", "dodgerblue", "green", "darkmagenta", "peru", "silver", "orange"]
 
 mois_noms = {
     1: "Janvier", 2: "Février", 3: "Mars", 4: "Avril", 5: "Mai", 6: "Juin",
@@ -306,7 +306,7 @@ if len(uploaded_files) >= 2:
     st.subheader(f"Q-Q annuel sur percentiles — par rapport à {ref_name}")
     
     fig, ax = plt.subplots(figsize=(8,8))
-    couleurs_quantile = ["lightgray", "navy", "green", "darkmagenta", "peru", "silver", "orange"]
+    couleurs_quantile = ["lightgray", "dodgerblue", "green", "darkmagenta", "peru", "silver", "orange"]
     ref_key = "source_1"
     ref_all = np.array(data[ref_key])
     ref_percentiles = np.percentile(ref_all, np.arange(1,101))
