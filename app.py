@@ -332,7 +332,11 @@ if len(uploaded_files) >= 2:
     
     st.pyplot(fig)
     plt.close(fig)
-
+    
+    st.markdown(
+        "Si les points de la source sont sous la droite 1:1, alors la source est plus froide (et inversement).",
+        unsafe_allow_html=True
+    )
 
     # =========================================================
     # ====================== CDF ==============================
