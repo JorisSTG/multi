@@ -184,6 +184,41 @@ if len(uploaded_files) >= 2:
     st.subheader(f"Précision mensuelle par recouvrement (%) par rapport à {ref_name}")
     st.dataframe(df_precision_styled, use_container_width=True)
 
+    # =========================================================
+    # ============ BLOC PRÉCISION GLOBALE ANNUELLE ============
+    # =========================================================
+    
+    df_precision_annuelle_list = []
+    
+    ref_all = data[ref_key]
+    
+    for k in data:
+        if k == ref_key:
+            continue  # pas de précision de la référence avec elle-même
+    
+        mod_all = data[k]
+    
+        pct_precision_year = precision_overlap(mod_all, ref_all)
+    
+        df_precision_annuelle_list.append({
+            "Source": file_names[k],
+            "Précision annuelle (%)": pct_precision_year
+        })
+    
+    df_precision_annuelle = pd.DataFrame(df_precision_annuelle_list)
+    
+    df_precision_annuelle_styled = (
+        df_precision_annuelle
+        .set_index("Source")
+        .style
+        .background_gradient(cmap="RdYlGn", vmin=vminP, vmax=vmaxP, axis=None)
+        .format("{:.0f}")
+    )
+    
+    st.subheader(f"Précision globale annuelle (%) par rapport à {ref_name}")
+    st.dataframe(df_precision_annuelle_styled, use_container_width=True)
+
+
     # -------- Seuils supérieurs et inférieurs --------
     t_sup_thresholds = st.text_input("Seuils Tmax supérieur (°C, séparés par des / )", "25/30")
     t_inf_thresholds = st.text_input("Seuils Tmin inférieur (°C, séparés par des / )", "0/5")
