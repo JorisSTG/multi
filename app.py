@@ -130,7 +130,7 @@ if len(uploaded_files) >= 2:
         overlap = np.sum(np.minimum(hist_a, hist_b) * bin_width)
         return int(round(overlap * 100))
     
-        # =========================================================
+    # =========================================================
     # ================== BLOC PRÉCISION ======================
     # =========================================================
 
@@ -172,7 +172,7 @@ if len(uploaded_files) >= 2:
     
     # -------- Style avec couleurs --------
     vminP, vmaxP = 50, 100
-    vminPglobal, vmaxPglobal = 80, 100
+    vminPglobal, vmaxPglobal = 70, 100
     
     df_precision_styled = (
         df_precision
