@@ -172,6 +172,7 @@ if len(uploaded_files) >= 2:
     
     # -------- Style avec couleurs --------
     vminP, vmaxP = 50, 100
+    vminPglobal, vmaxPglobal = 80, 100
     
     df_precision_styled = (
         df_precision
@@ -211,7 +212,7 @@ if len(uploaded_files) >= 2:
         df_precision_annuelle
         .set_index("Source")
         .style
-        .background_gradient(cmap="RdYlGn", vmin=vminP, vmax=vmaxP, axis=None)
+        .background_gradient(cmap="RdYlGn", vmin=vminPglobal, vmax=vmaxPglobal, axis=None)
         .format("{:.0f}")
     )
     
