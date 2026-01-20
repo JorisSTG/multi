@@ -562,8 +562,8 @@ if len(uploaded_files) >= 2:
     
     # -------- DJC et DJF --------
     st.subheader("DJC (chauffage) et DJF (froid)")
-    T_base_chauffage = float(st.text_input("Base DJC (°C) — chauffage", "19"))
-    T_base_froid = float(st.text_input("Base DJF (°C) — refroidissement", "23"))
+    T_base_chauffage = float(st.text_input("Base DJC (°C) — chauffage", "18"))
+    T_base_froid = float(st.text_input("Base DJF (°C) — refroidissement", "26"))
     results_djc, results_djf = {k: [] for k in data}, {k: [] for k in data}
     
     for mois_num in range(12):
